@@ -399,7 +399,7 @@ _mvn()
             local pl="${part%:*}"
             local gl="${part##*:}"
             if [ -n "${__mvn_comp_plugins[$pl]}" ]; then
-                pl_options="$pl_options|$($HOME/.maven-completion.d/${__mvn_comp_plugins["$pl"]} goalopts $gl)"
+                pl_options="${pl_options}$($HOME/.maven-completion.d/${__mvn_comp_plugins["$pl"]} goalopts $gl)"
             fi
         done
         COMPREPLY=( $(compgen -S ' ' -W "${options}${pl_options}" -- "${cur}") )
@@ -411,7 +411,7 @@ _mvn()
         else
             COMPREPLY=( $(compgen -S ',' -W "${profiles}" -P "-P" -- "${cur}") )
         fi
-    elif [[ ${prev} == -P ]] ; then
+    elif [[ ${prev} == -P || ${prev} == --activate-profiles ]] ; then
         if [[ ${cur} == *,* ]] ; then
             COMPREPLY=( $(compgen -S ',' -W "${profiles}" -P "${cur%,*}," -- "${cur##*,}") )
         else
