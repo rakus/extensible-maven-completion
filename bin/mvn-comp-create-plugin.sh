@@ -10,17 +10,11 @@
 #
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
+script_name="$(basename "$0")"
 
 plugin_dir="$HOME/.maven-completion.d"
 xsl_file="mvn-comp-create-plugin.xsl"
 
-
-if [ ! -e "$plugin_dir" ]; then
-    if ! mkdir "$plugin_dir"; then
-        echo >&2 "ERROR: Can't create mvn completion plugin dir: $plugin_dir"
-        exit 1
-    fi
-fi
 
 create_plugin()
 {
@@ -40,15 +34,30 @@ create_plugin()
         return 1
     fi
 
-    target_file="$plugin_dir/$(grep "^# FILE:" "$tmp_file" | cut -d: -f2 | tr -d ' \t')"
+    target_file="$plugin_dir/$(echo "$plugin_xml" | xpath -q -s . -e "concat(/plugin/groupId/text(),'.', /plugin//artifactId/text(),'.mc-plugin')" 2>/dev/null)"
 
     mv -f "$tmp_file" "$target_file"
     chmod +x "$target_file"
 
-    echo "Created $target_file"
+    echo "Created $target_file from $(basename "$jar")"
 }
 
-for jar in "$@"; do
-    create_plugin "$jar"
-done
+if [ $# -eq 0 ]; then
+    echo
+    echo "Usage: $script_name <plugin-jar-file> ..."
+    echo
+    echo "Creates completion-plugins for all given maven-plugin jars."
+    echo
+else
+    if [ ! -e "$plugin_dir" ]; then
+        if ! mkdir "$plugin_dir"; then
+            echo >&2 "ERROR: Can't create mvn completion plugin dir: $plugin_dir"
+            exit 1
+        fi
+    fi
+
+    for jar in "$@"; do
+        create_plugin "$jar"
+    done
+fi
 

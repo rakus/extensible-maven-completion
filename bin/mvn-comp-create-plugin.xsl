@@ -11,6 +11,7 @@ Author: Ralf Schandl
 
     <xsl:template match="/plugin">
         <xsl:if test="not(mojos/mojo/goal)">
+            <!-- No goals - nothing to do -->
             <xsl:message terminate="yes">
                 <xsl:text>Plugin </xsl:text>
                 <xsl:value-of select="groupId/text()"/>
@@ -20,8 +21,9 @@ Author: Ralf Schandl
                 <xsl:value-of select="version/text()"/>
                 <xsl:text> has no goals.</xsl:text>
             </xsl:message>
-
         </xsl:if>
+
+        <!-- script header -->
         <xsl:text>#!/bin/sh&#xA;</xsl:text>
         <xsl:text># maven-completion plugin for </xsl:text>
         <xsl:value-of select="groupId/text()"/>
@@ -38,6 +40,7 @@ Author: Ralf Schandl
         <xsl:text>.mc-plugin</xsl:text>
         <xsl:text>&#xA;&#xA;</xsl:text>
 
+        <!-- function register -->
         <xsl:text>register()&#xA;</xsl:text>
         <xsl:text>{&#xA;</xsl:text>
         <xsl:text>    echo "</xsl:text>
@@ -46,6 +49,8 @@ Author: Ralf Schandl
         <xsl:value-of select="artifactId/text()"/>
         <xsl:text>"&#xA;</xsl:text>
         <xsl:if test='groupId/text() = "org.apache.maven.plugins"'>
+            <!-- If it is a standard Maven plugin,
+            it is known without groupId -->
             <xsl:text>    echo "</xsl:text>
             <xsl:value-of select="artifactId/text()"/>
             <xsl:text>"&#xA;</xsl:text>
@@ -57,6 +62,7 @@ Author: Ralf Schandl
         </xsl:if>
         <xsl:text>}&#xA;&#xA;</xsl:text>
 
+        <!-- function goals -->
         <xsl:text>goals()&#xA;</xsl:text>
         <xsl:text>{&#xA;</xsl:text>
         <xsl:text>    echo "</xsl:text>
@@ -69,6 +75,7 @@ Author: Ralf Schandl
         <xsl:text>"&#xA;</xsl:text>
         <xsl:text>}&#xA;&#xA;</xsl:text>
 
+        <!-- function goal_options -->
         <xsl:text>goal_options()&#xA;</xsl:text>
         <xsl:text>{&#xA;</xsl:text>
         <xsl:for-each select="mojos/mojo">
@@ -83,11 +90,8 @@ Author: Ralf Schandl
             <xsl:for-each select="configuration/*">
                 <xsl:variable name="conf_name" select="name()" />
                 <xsl:variable name="prop_name" select="substring-after(substring-before(text(),'}'), '{')" />
-                <xsl:if test="//parameters/parameter[name/text()=$conf_name]/editable/text() = 'true' and string-length($prop_name) &gt; 0">
-
-                    <xsl:if test="position() != 1">
-                        <xsl:text>|</xsl:text>
-                    </xsl:if>
+                <xsl:if test="string-length($prop_name) &gt; 0 and //parameters/parameter[name/text()=$conf_name]/editable/text() = 'true'">
+                    <xsl:text>|</xsl:text>
                     <xsl:text>-D</xsl:text>
                     <xsl:value-of select="substring-after(substring-before(text(),'}'), '{')"/>
                     <xsl:text>=</xsl:text>
@@ -111,6 +115,7 @@ Author: Ralf Schandl
         <xsl:text>    fi&#xA;</xsl:text>
         <xsl:text>}&#xA;&#xA;</xsl:text>
 
+        <!-- MAIN -->
         <xsl:text>if [ "$1" = "register" ]; then&#xA;</xsl:text>
         <xsl:text>    register&#xA;</xsl:text>
         <xsl:text>elif [ "$1" = "goals" ]; then&#xA;</xsl:text>
