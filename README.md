@@ -15,7 +15,7 @@ but parts are still from Juven Xu.
    [ -f "$HOME/.maven-completion.bash" ] && . "$HOME/.maven-completion.bash"
    ```
 3. Run the script `bin/mvn-comp-create-all-plugins.sh` (see below)
-4. Start a new shell (or source `.maven-completion.bash`
+4. Start a new shell (or source `.maven-completion.bash`)
 
 
 In step 3 the script `bin/mvn-comp-create-all-plugins.sh` scans scan the local
@@ -65,7 +65,7 @@ deploy
 deploy|deploy-file|help
 
 ~/.maven-completion.d $ ./org.apache.maven.plugins.maven-deploy-plugin.mc-plugin goalopts deploy
--DaltDeploymentRepository=|-DaltReleaseDeploymentRepository=|-DaltSnapshotDeploymentRepository=|-DdeployAtEnd=true|-DretryFailedDeploymentCount=|-Dmaven.deploy.skip=true
+|-DaltDeploymentRepository=|-DaltReleaseDeploymentRepository=|-DaltSnapshotDeploymentRepository=|-DdeployAtEnd=true|-DretryFailedDeploymentCount=|-Dmaven.deploy.skip=true
 ```
 
 
@@ -74,35 +74,38 @@ deploy|deploy-file|help
 NOTE: Before starting to write a script, see next section.
 
 Create a file in `~/.maven-completion.d` with a file name with the extension `mc-plugin`.
-Here is the basic frame for the content:
+
+Example - plugin for the `maven-shade-plugin`:
 ```
 register()
 {
-    # echo all names, one per line
+    # the full name
+    echo "org.apache.maven.plugins:maven-shade-plugin"
+    # as groupId is org.apache.maven.plugins, also detected without it
+    echo "maven-shade-plugin"
+    # the goalPrefix
+    echo "shade"
 }
 
 goals()
 {
-    # echo all goals pipe-separated ('|')
+    echo "help|shade"
 }
 
 goal_options()
 {
-
-    if [ "$1" = "..." ]; then
-        # echo all options of goal (including the leading '-D'), pipe-separated ('|')
-    elif [ "$1" = "..." ]; then
-        # echo all options of goal (including the leading '-D'), pipe-separated ('|')
-    elif [ "$1" = "..." ]; then
-        # echo all options of goal (including the leading '-D'), pipe-separated ('|')
+    if [ "$1" = "help" ]; then
+        echo "|-Ddetail=true|-Dgoal=|-DindentSize=|-DlineLength="
+    elif [ "$1" = "shade" ]; then
+        echo "|-DshadeSourcesContent=true"
     fi
 }
 
-if [ "$1" = "register" ];then
+if [ "$1" = "register" ]; then
     register
-elif [ "$1" = "goals" ];then
+elif [ "$1" = "goals" ]; then
     goals
-elif [ "$1" = "goalopts" ];then
+elif [ "$1" = "goalopts" ]; then
     if [ $# != 2 ];then
         echo >&2 "ERROR: Missing goal name"
         exit 1
@@ -132,8 +135,8 @@ The script `bin/mvn-comp-create-plugin.sh` with the XSL stylesheet
 Example:
 
 ```
-~ $ bin/mvn-comp-create-plugin.sh ~/.m2/repository/io/fabric8/docker-maven-plugin/0.23.0/docker-maven-plugin-0.23.0.jar
-Created /home/.../.maven-completion.d/io.fabric8.docker-maven-plugin.mc-plugin
+~ $ bin/mvn-comp-create-plugin.sh ~/.m2/repository/org/apache/maven/plugins/maven-shade-plugin/3.2.1/maven-shade-plugin-3.2.1.jar
+Created /home/.../.maven-completion.d/org.apache.maven.plugins.maven-shade-plugin.mc-plugin from maven-shade-plugin-3.2.1.jar
 ```
 
 Note: This needs the `xsltproc` executable.
