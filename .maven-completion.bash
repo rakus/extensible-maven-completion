@@ -306,20 +306,20 @@ __mvn_init()
     unset __mvn_comp_plugins
     typeset -gA __mvn_comp_plugins
 
-    # shellcheck disable=SC2012
-    if [ "$(ls -tr "$HOME/.maven-completion.d" 2>/dev/null| tail -n1)" != "mc-plugin.cache" ]; then
-        if [ -d "$HOME/.maven-completion.d" ]; then
+    if [ -d "$HOME/.maven-completion.d" ]; then
+        # shellcheck disable=SC2012
+        if [ "$(ls -tr "$HOME/.maven-completion.d" 2>/dev/null| tail -n1)" != "mc-plugin.cache" ]; then
             true > "$HOME/.maven-completion.d/mc-plugin.cache"
             for pi in "$HOME/.maven-completion.d/"*.mc-plugin; do
                 for al in $($pi register); do
                     #echo >&2 "Registering: >>$al<<"
                     echo "__mvn_comp_plugins[\"$al\"]=\"$(basename "$pi")\"" >> "$HOME/.maven-completion.d/mc-plugin.cache"
-                done
+                done 2>/dev/null
             done
         fi
+        # shellcheck disable=SC1090
+        . "$HOME/.maven-completion.d/mc-plugin.cache"
     fi
-    # shellcheck disable=SC1090
-    . "$HOME/.maven-completion.d/mc-plugin.cache"
     __mvn_inited="true"
 }
 
