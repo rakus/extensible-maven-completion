@@ -9,7 +9,7 @@ but parts are still from Juven Xu.
 
 ## Installation
 
-1. Copy the file `.maven-completion.bash` to your home directory
+1. Copy the file `_maven-completion.bash` to `$HOME/.maven-completion.bash`
 2. Add the following line to your `.bashrc`:
    ```
    [ -f "$HOME/.maven-completion.bash" ] && . "$HOME/.maven-completion.bash"
@@ -53,19 +53,20 @@ Completion-Plugins have 3 integration points:
 
 
 Here is the example usage for the completion-plugin for the
-`maven-deploy-plugin`:
+`maven-shade-plugin`:
 
 ```
-~/.maven-completion.d $ ./org.apache.maven.plugins.maven-deploy-plugin.mc-plugin register
-org.apache.maven.plugins:maven-deploy-plugin
-maven-deploy-plugin
-deploy
+~/.maven-completion.d $ ./org.apache.maven.plugins.maven-shade-plugin.mc-plugin register
+org.apache.maven.plugins:maven-shade-plugin
+maven-shade-plugin
+shade
 
-~/.maven-completion.d $ ./org.apache.maven.plugins.maven-deploy-plugin.mc-plugin goals
-deploy|deploy-file|help
+~/.maven-completion.d $ ./org.apache.maven.plugins.maven-shade-plugin.mc-plugin goals
+help|shade
 
-~/.maven-completion.d $ ./org.apache.maven.plugins.maven-deploy-plugin.mc-plugin goalopts deploy
-|-DaltDeploymentRepository=|-DaltReleaseDeploymentRepository=|-DaltSnapshotDeploymentRepository=|-DdeployAtEnd=true|-DretryFailedDeploymentCount=|-Dmaven.deploy.skip=true
+~/.maven-completion.d $ ./org.apache.maven.plugins.maven-shade-plugin.mc-plugin goalopts shade
+|-DshadeSourcesContent=true
+
 ```
 
 
