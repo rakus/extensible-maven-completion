@@ -18,6 +18,11 @@
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 script_name="$(basename "$0")"
 
+if ! type xpath >/dev/null 2>&1; then
+    echo >&2 "ERROR: Executable 'xpath' is not available ... can't continue"
+    exit 1
+fi
+
 if [ -f "$HOME/.m2/settings.xml" ]; then
     repo="$(xpath -q -e "/settings/localRepository/text()" "$HOME/.m2/settings.xml")"
     if [ -z "$repo" ]; then

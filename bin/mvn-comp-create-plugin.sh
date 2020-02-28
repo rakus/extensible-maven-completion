@@ -15,6 +15,16 @@ script_name="$(basename "$0")"
 plugin_dir="$HOME/.maven-completion.d"
 xsl_file="mvn-comp-create-plugin.xsl"
 
+if ! type xpath >/dev/null 2>&1; then
+    echo >&2 "ERROR: Executable 'xpath' is not available ... can't continue"
+    exit 1
+fi
+if ! type xsltproc >/dev/null 2>&1; then
+    echo >&2 "ERROR: Executable 'xsltproc' is not available ... can't continue"
+    exit 1
+fi
+
+
 
 create_plugin()
 {
