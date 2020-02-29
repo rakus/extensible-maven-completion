@@ -34,7 +34,16 @@ See [Completion-Plugins](#completion-plugins) below for details.
 
 ### Parsing Profiles
 
-todo
+When the argument for `-P` or `--activate-profiles` should be completed, the
+script parses the POM for profile names. It parses the current POM, all child
+POMS and all parent POMS as found in the current source tree.
+
+Restriction: Parent POMS from the M2 directory or a remote repository are _not_
+parsed.
+
+The result of parsing the POMs is cached in a environment variable. If the
+maven completion is invoked for a different POM, the cached profiles are
+discarded and the POM(s) are parsed again.
 
 ### Completion-Plugins
 
