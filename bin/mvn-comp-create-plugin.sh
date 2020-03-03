@@ -30,8 +30,6 @@ create_plugin()
 {
     jar="$1"
 
-    #plugin_xml="$(unzip -qc "$jar" META-INF/maven/plugin.xml 2>/dev/null)"
-    #if [ $? != 0 ]; then
     if ! plugin_xml="$(unzip -qc "$jar" META-INF/maven/plugin.xml 2>/dev/null)"; then
         echo >&2 "ERROR: Not a mvn plugin (META-INF/maven/plugin.xml not found): $jar"
         return 1
@@ -41,6 +39,7 @@ create_plugin()
 
     if ! echo "$plugin_xml"| xsltproc "$script_dir/$xsl_file" - > "$tmp_file"; then
         echo >&2 "ERROR: XSLT failed"
+        rm -f "$tmp_file"
         return 1
     fi
 
