@@ -1,11 +1,11 @@
 
-# Bash completion for MAVEN
+# Bash MAVEN completion
 
 This project provides a bash completion script for the Apache Maven build tool.
 
 The script is initially based on the [maven-completion from Juven
-Xu](https://github.com/juven/maven-bash-completion). A lot of stuff was added,
-but parts are still from Juven Xu.
+Xu](https://github.com/juven/maven-bash-completion). A lot of stuff were added
+or changed, but some parts are still from Juven Xu.
 
 ## Installation
 
@@ -18,19 +18,37 @@ but parts are still from Juven Xu.
 4. Start a new shell (or source `.maven-completion.bash`)
 
 
-In step 3 the script `bin/mvn-comp-create-all-plugins.sh` scans scan the local
-repository (`~/.m2/repository` or whatever is configured in
-`~/.m2/settings.xml`) for all JARs that are named like a maven-plugin and will
+In step 3 the script `bin/mvn-comp-create-all-plugins.sh` scans the local
+repository for all JARs that are named like a maven-plugin and will
 generate a completion-plugin for it. The completion-plugins are stored in the
 directory `$HOME/.mvn-completion.d`.
 
 The script might issue error messages for JARs that seems to be a plugin by
-name but isn't one. Just ignore them.
+name but isn't one or plugins without goals (yes, this is possible). Just
+ignore them.
 
 See [Completion-Plugins](#completion-plugins) below for details.
 
 
 ## Features
+
+### Configuration
+
+Then maven completion can be configured with two options
+
+#### `mvn_completion_no_parsing`
+
+If the environment variable `mvn_completion_no_parsing` is set to any non-empty
+value, parsing the POMs is disabled all together. This is useful on machines
+with slow file IO (maybe due to a virus scanner monitoring all file operations)
+or very large code bases.
+
+#### `mvn_completion_parser`
+
+This options gives a hint which parser to use for parsing the POMs. See
+"Parser Selection" below.
+
+
 
 ### Parsing Profiles
 
@@ -44,6 +62,43 @@ parsed.
 The result of parsing the POMs is cached in a environment variable. If the
 maven completion is invoked for a different POM, the cached profiles are
 discarded and the POM(s) are parsed again.
+
+Parsing is done either with `xsltproc`, `xpath` or `grep` (and friends).
+
+Performance of parsing with `grep` or `xsltproc` is nearly the same, but `grep`
+is less precise. For example it doesn't know XML comments, so it might return
+profile names that are actually commented out. Also it requires proper
+formatted POMs with only one tag per line.
+
+The script also checks for `msxsl.exe` and uses it if `xsltproc` is not
+available or not working. Performance with this tool could not be assessed
+(virus scanner on test machine).
+
+The performance of `xpath` (from the Perl package) is much slower (factor 10 or
+more).  Support for `xpath` might be removed in the future.
+
+__Parser Selection__
+
+The parser is selected in the following order:
+
+1. `xsltproc`
+2. `msxsl` (on Windows, maybe needs to be downloaded from Microsoft)
+3. `xpath` (Perl)
+4. `grep` (and other text tools)
+
+Whatever is found first is used.
+
+The environment variable `mvn_completion_parser` can be used to influence the
+selection:
+
+* `msxsl`: Skip `xsltproc` and start selection with `msxsl`.
+* `xpath`: Skip xslt processors and start selection with `xpath`.
+* `grep`: Use `grep`.
+
+If no xsl processor is available, consider setting `mvn_completion_parser` to
+`grep` as `xpath` is just slow. Or disable parsing by setting
+`mvn_completion_no_parsing`.
+
 
 ### Completion-Plugins
 
@@ -168,15 +223,13 @@ is checked if the plugin-cache is up-to-date.
 
 ## Supporting Tools
 
-The scripts to create completion-plugins need the tools
+* `xsltproc` - a XSLT processor (package `xsltproc` on Debian, `libxslt` on RH)
+* `xpath` - a simple XPath processor (package `libxml-xpath-perl` on Debian,
+  `perl-XML-XPath` on RH)
+* `msxsl` - a XSLT processor for Windows. AFAIK not installed by default. Get
+  it from
+  [Microsoft](https://www.microsoft.com/en-us/download/details.aspx?id=21714).
 
-* `xsltproc` - a XSLT processor (package `xsltproc` on Debian based
-  distributions)
-* `xpath` - a simple XPath processor (package `libxml-xpath-perl` on Debian
-  based distributions)
-
-Also the maven completion benefit from this tools. There is a fallback to work
-without them, but this depends on properly formatted pom files (one tag per line).
 
 ## License
 

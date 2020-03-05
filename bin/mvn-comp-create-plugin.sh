@@ -12,16 +12,30 @@
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 script_name="$(basename "$0")"
 
-plugin_dir="$HOME/.maven-completion.d"
+plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
 xsl_file="mvn-comp-create-plugin.xsl"
 
-if ! type xpath >/dev/null 2>&1; then
-    echo >&2 "ERROR: Executable 'xpath' is not available ... can't continue"
-    exit 1
-fi
-if ! type xsltproc >/dev/null 2>&1; then
-    echo >&2 "ERROR: Executable 'xsltproc' is not available ... can't continue"
-    exit 1
+typeset -a xslt_cmd
+if [ "$OSTYPE" = "msys" ]; then
+
+    if ! type xsltproc >/dev/null 2>&1 || ! xsltproc </dev/null >/dev/null 2>&1; then
+        if type msxsl.exe >/dev/null 2>&1; then
+            xslt_cmd=( msxsl - "$script_dir/$xsl_file" )
+        else
+            echo >&2 "ERROR: Neither working xsltproc nor msxsl.exe found ... can't continue"
+            exit 1
+        fi
+    fi
+else
+    if ! type xpath >/dev/null 2>&1; then
+        echo >&2 "ERROR: Executable 'xpath' is not available ... can't continue"
+        exit 1
+    fi
+    if ! type xsltproc >/dev/null 2>&1; then
+        echo >&2 "ERROR: Executable 'xsltproc' is not available ... can't continue"
+        exit 1
+    fi
+    xslt_cmd=( xsltproc "$script_dir/$xsl_file" - )
 fi
 
 
@@ -37,13 +51,17 @@ create_plugin()
 
     tmp_file="$(mktemp)"
 
-    if ! echo "$plugin_xml"| xsltproc "$script_dir/$xsl_file" - > "$tmp_file"; then
+    if ! echo "$plugin_xml"| "${xslt_cmd[@]}" > "$tmp_file"; then
         echo >&2 "ERROR: XSLT failed"
         rm -f "$tmp_file"
         return 1
     fi
 
-    target_file="$plugin_dir/$(echo "$plugin_xml" | xpath -q -s . -e "concat(/plugin/groupId/text(),'.', /plugin//artifactId/text(),'.mc-plugin')" 2>/dev/null)"
+    if [ "$OSTYPE" != "msys" ]; then
+        target_file="$plugin_dir/$(echo "$plugin_xml" | xpath -q -s . -e "concat(/plugin/groupId/text(),'.', /plugin//artifactId/text(),'.mc-plugin')" 2>/dev/null)"
+    else
+        target_file="$plugin_dir/$(grep "^# FILE:" "$tmp_file" | sed 's/^# FILE: //')"
+    fi
 
     mv -f "$tmp_file" "$target_file"
     chmod +x "$target_file"

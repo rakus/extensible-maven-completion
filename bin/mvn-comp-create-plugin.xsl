@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 File:   mvn-comp-create-plugin.xsl
 
@@ -7,7 +7,7 @@ Abstract: Create a mvn-comp plugin from a plugin.xml
 Author: Ralf Schandl
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-    <xsl:output method="text"/>
+    <xsl:output method="text" encoding="UTF-8"/>
 
     <xsl:template match="/plugin">
         <xsl:if test="not(mojos/mojo/goal)">
@@ -131,6 +131,7 @@ Author: Ralf Schandl
         <xsl:text>    echo "    register         - show names to register the plugin"&#xA;</xsl:text>
         <xsl:text>    echo "    goals            - list goals (pipe separated)"&#xA;</xsl:text>
         <xsl:text>    echo "    goalopts &lt;goal>  - list options for given goal"&#xA;</xsl:text>
+        <xsl:text>    exit 1&#xA;</xsl:text>
         <xsl:text>fi&#xA;</xsl:text>
 
         <xsl:text>&#xA;</xsl:text>

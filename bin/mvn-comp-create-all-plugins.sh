@@ -23,7 +23,12 @@ if ! command -v mvn >/dev/null 2>&1; then
     exit 1
 fi
 
-repo="$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '^.INFO')"
+repo="$(mvn -B help:evaluate -Dexpression=settings.localRepository | grep -v '^\[')"
+if [[ "$repo" = ?:* ]]; then
+    # path starts with any char followed by colon -> looks like Windows
+    # Change backslashes to slashes
+    repo="${repo//\\/\/}"
+fi
 
 if [ $# -gt 0 ]; then
     echo
@@ -34,7 +39,6 @@ if [ $# -gt 0 ]; then
     echo
     exit 1
 fi
-
 
 
 if sort -k2V /dev/null &>/dev/null; then

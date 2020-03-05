@@ -1,7 +1,7 @@
 #
 # Bash completion for MAVEN
 #
-# RECOMMENDED: xsltproc or xpath
+# RECOMMENDED: xsltproc or xpath (or msxsl.exe on Windows)
 #
 # AUTHOR: Ralf Schandl
 # Based on work by Juven Xu. See https://github.com/juven/maven-bash-completion
@@ -12,6 +12,38 @@
 
 _mvn_has_xsltproc="$(type -P xsltproc 2>/dev/null)"
 _mvn_has_xpath="$(type -P xpath 2>/dev/null)"
+_mvn_has_msxsl="$(type -P msxsl.exe 2>/dev/null)"
+
+# on Git For Windows xsltproc is available, but might not work
+if ! xsltproc --version >/dev/null 2>&1; then
+    _mvn_has_xsltproc=''
+fi
+
+# disable xpath for msys (e.g. Git Bash on Windows)
+# The PATH expansion feature might destroy xpath expressions
+# and xpath is slow anyway.
+if [ "$OSTYPE" = "msys" ]; then
+    _mvn_has_xpath=''
+fi
+
+case ${mvn_completion_parser:-UNSET} in
+    msxsl)
+        _mvn_has_xsltproc=''
+        ;;
+    xpath)
+        _mvn_has_xsltproc=''
+        _mvn_has_msxsl=''
+        ;;
+    grep)
+        _mvn_has_xsltproc=''
+        _mvn_has_msxsl=''
+        _mvn_has_xpath=''
+        ;;
+    UNSET) : ;;
+    *)
+        echo >&2 "maven-completion: Invalid value for mvn_completion_parser: $mvn_completion_parser - IGNORED"
+        ;;
+esac
 
 #mvc_debug()
 #{
@@ -74,7 +106,7 @@ unset -f _mvn_function_exists
 
 #---------[ POM parsing functions ]--------------------------------------------
 # Either using xpath or xslt or (as fallback) grep etc
-if [ -n "$_mvn_has_xsltproc" ]; then
+if [ -n "${_mvn_has_xsltproc}" ]; then
 
     __mvn_get_module_poms()
     {
@@ -141,6 +173,85 @@ __mvn_get_settings_profiles()
     xmlns:m="http://maven.apache.org/POM/4.0.0"
     xmlns:set="http://maven.apache.org/SETTINGS/1.0.0">
     <xsl:output method="text"/>
+    <xsl:template match="/">
+        <xsl:for-each select="/set:settings/set:profiles/set:profile/set:id">
+            <xsl:value-of select="text()"/><xsl:text>&#xA;</xsl:text>
+        </xsl:for-each>
+    </xsl:template>
+</xsl:stylesheet>
+EOF
+}
+
+elif [ -n "$_mvn_has_msxsl" ]; then
+
+    __mvn_get_module_poms()
+    {
+        msxsl "$1" - << EOF | tr -d '\r'
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:m="http://maven.apache.org/POM/4.0.0">
+    <xsl:output method="text" encoding="UTF-8"/>
+    <xsl:template match="/">
+        <xsl:for-each select="//m:modules/m:module">
+            <xsl:value-of select="text()"/><xsl:text>/pom.xml&#xA;</xsl:text>
+        </xsl:for-each>
+    </xsl:template>
+</xsl:stylesheet>
+EOF
+}
+
+__mvn_get_pom_profiles()
+{
+    local fn
+    for fn in "$@"; do
+        msxsl "$fn" - << EOF | tr -d '\r'
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:m="http://maven.apache.org/POM/4.0.0">
+    <xsl:output method="text" encoding="UTF-8"/>
+    <xsl:template match="/">
+        <xsl:for-each select="/m:project/m:profiles/m:profile/m:id">
+            <xsl:value-of select="text()"/><xsl:text>&#xA;</xsl:text>
+        </xsl:for-each>
+    </xsl:template>
+</xsl:stylesheet>
+EOF
+    done
+}
+
+__mvn_get_parent_pom_path()
+{
+    msxsl "$1" - << EOF | tr -d '\r'
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:m="http://maven.apache.org/POM/4.0.0">
+    <xsl:output method="text" encoding="UTF-8"/>
+    <xsl:template match="/">
+        <xsl:apply-templates/>
+    </xsl:template>
+    <xsl:template match="/m:project/m:parent">
+        <xsl:choose>
+            <xsl:when test="./m:relativePath">
+                <xsl:value-of select="./m:relativePath/text()"/><xsl:text>&#xA;</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>../pom.xml&#xA;</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+    <xsl:template match="text()"/>
+</xsl:stylesheet>
+EOF
+}
+
+__mvn_get_settings_profiles()
+{
+    msxsl "$HOME/.m2/settings.xml" - << EOF | tr -d '\r'
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:m="http://maven.apache.org/POM/4.0.0"
+    xmlns:set="http://maven.apache.org/SETTINGS/1.0.0">
+    <xsl:output method="text" encoding="UTF-8"/>
     <xsl:template match="/">
         <xsl:for-each select="/set:settings/set:profiles/set:profile/set:id">
             <xsl:value-of select="text()"/><xsl:text>&#xA;</xsl:text>
@@ -220,15 +331,16 @@ fi
 
 unset _mvn_has_xpath
 unset _mvn_has_xsltproc
+unset _mvn_has_msxsl
 
 #---------[ Not parsing functions ]--------------------------------------------
 
 __mvn_get_poms_recursive()
 {
+    [ ! -e "$1" ] && return
     echo "$1"
     local modules=$( __mvn_get_module_poms "$1" | sed "s%^%$(dirname "$1")/%")
     #mvc_debug "recModules: >>$modules<<"
-    echo "$modules"
     for m in $modules; do
         __mvn_get_poms_recursive "$m"
     done
@@ -253,6 +365,7 @@ __mvn_get_parent_poms()
 
 __mvn_get_profiles()
 {
+    [ -n "${mvn_completion_no_parsing:-}" ] && return
     if [ -z "$__mvn_last_pom_profiles" ]; then
         local IFS profs modules
         IFS=$'\n' modules=( $(__mvn_get_poms_recursive "$1" | sort -u) )
@@ -281,11 +394,12 @@ __mvn_filter_array()
 __mvn_plugin_goal()
 {
     local plugin goals suffix
+    local plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
 
     if [[ ${cur} == *:* ]] ; then
         local plugin="${cur%:*}"
         if [ -n "${__mvn_comp_plugins["$plugin"]}" ]; then
-            local goals="$("$HOME/.maven-completion.d/${__mvn_comp_plugins[$plugin]}" goals | sed "s/^/$plugin:/;s/|/|$plugin:/g")"
+            local goals="$("$plugin_dir/${__mvn_comp_plugins[$plugin]}" goals | sed "s/^/$plugin:/;s/|/|$plugin:/g")"
             suffix=' '
         else
             local goals="$(__mvn_filter_array "$cur" "${!__mvn_comp_plugins[@]}")"
@@ -306,19 +420,21 @@ __mvn_init()
     unset __mvn_comp_plugins
     typeset -gA __mvn_comp_plugins
 
-    if [ -d "$HOME/.maven-completion.d" ]; then
+    local plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
+
+    if [ -d "$plugin_dir" ]; then
         # shellcheck disable=SC2012
-        if [ "$(ls -tr "$HOME/.maven-completion.d" 2>/dev/null| tail -n1)" != "mc-plugin.cache" ]; then
-            true > "$HOME/.maven-completion.d/mc-plugin.cache"
-            for pi in "$HOME/.maven-completion.d/"*.mc-plugin; do
+        if [ "$(ls -tr "$plugin_dir" 2>/dev/null| tail -n1)" != "mc-plugin.cache" ]; then
+            true > "$plugin_dir/mc-plugin.cache"
+            for pi in "$plugin_dir/"*.mc-plugin; do
                 for al in $($pi register); do
                     #echo >&2 "Registering: >>$al<<"
-                    echo "__mvn_comp_plugins[\"$al\"]=\"$(basename "$pi")\"" >> "$HOME/.maven-completion.d/mc-plugin.cache"
+                    echo "__mvn_comp_plugins[\"$al\"]=\"$(basename "$pi")\"" >> "$plugin_dir/mc-plugin.cache"
                 done 2>/dev/null
             done
         fi
         # shellcheck disable=SC1090
-        . "$HOME/.maven-completion.d/mc-plugin.cache"
+        . "$plugin_dir/mc-plugin.cache"
     fi
     __mvn_inited="true"
 }
@@ -364,12 +480,14 @@ _mvn()
         local pl_options=''
         local prev_parts part pl gl part
 
+        local plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
+
         IFS=" " read -r -a prev_parts <<< "$COMP_LINE"
         for part in "${prev_parts[@]}"; do
             local pl="${part%:*}"
             local gl="${part##*:}"
             if [ -n "${__mvn_comp_plugins[$pl]}" ]; then
-                pl_options="${pl_options}$("$HOME/.maven-completion.d/${__mvn_comp_plugins[$pl]}" goalopts "$gl")"
+                pl_options="${pl_options}$("$plugin_dir/${__mvn_comp_plugins[$pl]}" goalopts "$gl")"
             fi
         done
         COMPREPLY=( $(compgen -S ' ' -W "${options}${pl_options}" -- "${cur}") )
@@ -377,6 +495,7 @@ _mvn()
     elif [[ ${cur} == -P* ]] ; then
         cur=${cur:2}
         local profiles=$(__mvn_get_profiles pom.xml)
+        __mvn_last_pom_profiles="$profiles"
         if [[ ${cur} == *,* ]] ; then
             COMPREPLY=( $(compgen -S ',' -W "${profiles}" -P "-P${cur%,*}," -- "${cur##*,}") )
         else
@@ -384,6 +503,7 @@ _mvn()
         fi
     elif [[ ${prev} == -P || ${prev} == --activate-profiles ]] ; then
         local profiles=$(__mvn_get_profiles pom.xml)
+        __mvn_last_pom_profiles="$profiles"
         if [[ ${cur} == *,* ]] ; then
             COMPREPLY=( $(compgen -S ',' -W "${profiles}" -P "${cur%,*}," -- "${cur##*,}") )
         else
