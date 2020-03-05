@@ -26,9 +26,11 @@ error_count=0
 
 # load bash-completion if necessary
 declare -F _completion_loader &>/dev/null || {
+    # shellcheck disable=SC1091
     [ -e /usr/share/bash-completion/bash_completion ] && source /usr/share/bash-completion/bash_completion
 }
 if [ "$OSTYPE" = "msys" ]; then
+    # shellcheck disable=SC1091
     [ -e "/etc/profile.d/git-prompt.sh" ] && source  "/etc/profile.d/git-prompt.sh"
 fi
 
@@ -126,7 +128,7 @@ create_comp_plugin()
 
     if [ ! -e "$mvn_plugin" ]; then
         mvn dependency:copy -DoutputDirectory="$test_m2" \
-            -Dartifact=$grp:$artifact:$version \
+            -Dartifact="$grp:$artifact:$version" \
             -Dtransitive=false >/dev/null
     fi
 

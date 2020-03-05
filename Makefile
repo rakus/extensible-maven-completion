@@ -16,7 +16,7 @@ tests:   ## run tests
 	tests/test_comp.sh
 
 check:  ## run shellcheck
-	shellcheck -sbash -fgcc _maven-completion.bash bin/*.sh
+	shellcheck -sbash -fgcc _maven-completion.bash bin/*.sh tests/test_comp.sh
 
 zip: $(ZIP_NAME)            ## Build zip file
 
