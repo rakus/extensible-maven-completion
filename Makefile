@@ -3,7 +3,7 @@
 #
 
 ZIP_NAME = maven-completion.zip
-ZIP_CONTENT = README.md INSTALL _maven-completion.bash bin/mvn-comp-create-all-plugins.sh bin/mvn-comp-create-plugin.sh bin/mvn-comp-create-plugin.xsl
+ZIP_CONTENT = README.md INSTALL _maven-completion.bash bin/mvn-comp-create-all-extensions.sh bin/mvn-comp-create-extension.sh bin/mvn-comp-create-extension.xsl
 
 .PHONY: zip html clean check help tests
 

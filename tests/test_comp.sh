@@ -11,6 +11,7 @@
 # CREATED: 2020-03-04
 #
 
+
 script_dir="$(cd "$(dirname "$0")" && pwd)" || exit 1
 #script_name="$(basename "$0")"
 #script_file="$script_dir/$script_name"
@@ -34,11 +35,11 @@ if [ "$OSTYPE" = "msys" ]; then
     [ -e "/etc/profile.d/git-prompt.sh" ] && source  "/etc/profile.d/git-prompt.sh"
 fi
 
-export mvn_completion_plugin_dir="$script_dir/workdir/maven-completion.d"
-mkdir -p "$mvn_completion_plugin_dir"
+export mvn_completion_ext_dir="$script_dir/workdir/maven-completion.d"
+mkdir -p "$mvn_completion_ext_dir"
 # shellcheck disable=SC1090
 source "$mvn_completion_script"
-rm -f "$mvn_completion_plugin_dir/mc-plugin.cache"
+rm -f "$mvn_completion_ext_dir/mc-ext.cache"
 
 export test_m2="$script_dir/workdir/m2"
 mkdir -p "$test_m2"
@@ -115,16 +116,16 @@ assert_completion()
 }
 
 
-section "Downloading maven plugins and creating completion plugins"
+section "Downloading maven plugins and creating completion extensions"
 
-create_comp_plugin()
+create_comp_ext()
 {
     local grp="$1"
     local artifact="$2"
     local version="$3"
 
     local mvn_plugin="$test_m2/$artifact-$version.jar"
-    local comp_plugin="$mvn_completion_plugin_dir/$grp.$artifact.mc-plugin"
+    local comp_ext="$mvn_completion_ext_dir/$grp.$artifact.mc-ext"
 
     if [ ! -e "$mvn_plugin" ]; then
         mvn dependency:copy -DoutputDirectory="$test_m2" \
@@ -132,40 +133,40 @@ create_comp_plugin()
             -Dtransitive=false >/dev/null
     fi
 
-    rm -f "$comp_plugin"
+    rm -f "$comp_ext"
 
-    "$script_dir/../bin/mvn-comp-create-plugin.sh" "$mvn_plugin"
+    "$script_dir/../bin/mvn-comp-create-extension.sh" "$mvn_plugin"
 
 
-    if [ -e "$comp_plugin" ]; then
-        log_ok "Completion Plugin created"
+    if [ -e "$comp_ext" ]; then
+        log_ok "Completion Extension created"
     else
-        log_error "created" "missing" "Completion Plugin created"
+        log_error "created" "missing" "Completion Extension created"
     fi
 
-    if "$comp_plugin" register &>/dev/null; then
-        log_ok "Completion Plugin returns 0"
+    if "$comp_ext" register &>/dev/null; then
+        log_ok "Completion Extension returns 0"
     else
-        log_error "returns 0" "returned $?" "Run Completion Plugin"
+        log_error "returns 0" "returned $?" "Run Completion Extension"
     fi
 }
 
-create_comp_plugin "org.apache.maven.plugins" "maven-deploy-plugin" "2.7"
-create_comp_plugin "org.apache.maven.plugins" "maven-dependency-plugin" "2.10"
+create_comp_ext "org.apache.maven.plugins" "maven-deploy-plugin" "2.7"
+create_comp_ext "org.apache.maven.plugins" "maven-dependency-plugin" "2.10"
 
-# Test plugin cache created
+# Test extension cache created
 _mvn >/dev/null 2>&1
-if [ -e "$mvn_completion_plugin_dir/mc-plugin.cache" ]; then
-    log_ok "Check mc-plugin.cache created"
+if [ -e "$mvn_completion_ext_dir/mc-ext.cache" ]; then
+    log_ok "Check mc-ext.cache created"
 else
-    log_error "File mc-plugin.cache created" "File missing"
+    log_error "File mc-ext.cache created" "File missing"
 fi
 
 
 section "Lifecycle Completion"
 
-# disable plugins
-export mvn_completion_plugin_dir="$script_dir/OFF"
+# disable extensions
+export mvn_completion_ext_dir="$script_dir/OFF"
 mvn_comp_reset
 assert_completion "validate " mvn validate
 assert_completion "initialize " mvn initialize
@@ -201,8 +202,8 @@ assert_completion "package " mvn pack
 assert_completion "install " mvn inst
 assert_completion "deploy " mvn depl
 
-# reenable plugins
-export mvn_completion_plugin_dir="$script_dir/workdir/maven-completion.d"
+# reenable extensions
+export mvn_completion_ext_dir="$script_dir/workdir/maven-completion.d"
 mvn_comp_reset
 
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# FILE: mvn-comp-create-plugin.sh
+# FILE: mvn-comp-create-extension.sh
 #
-# ABSTRACT:
+# ABSTRACT: Create Completion Extensions for given Jar Files
 #
 # AUTHOR: Ralf Schandl
 #
@@ -12,8 +12,8 @@
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 script_name="$(basename "$0")"
 
-plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
-xsl_file="mvn-comp-create-plugin.xsl"
+ext_dir=${mvn_completion_ext_dir:-$HOME/.maven-completion.d}
+xsl_file="mvn-comp-create-extension.xsl"
 
 typeset -a xslt_cmd
 if [ "$OSTYPE" = "msys" ]; then
@@ -40,7 +40,7 @@ fi
 
 
 
-create_plugin()
+create_extension()
 {
     jar="$1"
 
@@ -58,9 +58,9 @@ create_plugin()
     fi
 
     if [ "$OSTYPE" != "msys" ]; then
-        target_file="$plugin_dir/$(echo "$plugin_xml" | xpath -q -s . -e "concat(/plugin/groupId/text(),'.', /plugin//artifactId/text(),'.mc-plugin')" 2>/dev/null)"
+        target_file="$ext_dir/$(echo "$plugin_xml" | xpath -q -s . -e "concat(/plugin/groupId/text(),'.', /plugin//artifactId/text(),'.mc-ext')" 2>/dev/null)"
     else
-        target_file="$plugin_dir/$(grep "^# FILE:" "$tmp_file" | sed 's/^# FILE: //')"
+        target_file="$ext_dir/$(grep "^# FILE:" "$tmp_file" | sed 's/^# FILE: //')"
     fi
 
     mv -f "$tmp_file" "$target_file"
@@ -73,18 +73,18 @@ if [ $# -eq 0 ]; then
     echo
     echo "Usage: $script_name <plugin-jar-file> ..."
     echo
-    echo "Creates completion-plugins for all given maven-plugin jars."
+    echo "Creates completion-extensions for all given maven-plugin jars."
     echo
 else
-    if [ ! -e "$plugin_dir" ]; then
-        if ! mkdir "$plugin_dir"; then
-            echo >&2 "ERROR: Can't create mvn completion plugin dir: $plugin_dir"
+    if [ ! -e "$ext_dir" ]; then
+        if ! mkdir "$ext_dir"; then
+            echo >&2 "ERROR: Can't create mvn completion extensions dir: $ext_dir"
             exit 1
         fi
     fi
 
     for jar in "$@"; do
-        create_plugin "$jar"
+        create_extension "$jar"
     done
 fi
 

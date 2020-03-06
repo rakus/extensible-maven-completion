@@ -394,15 +394,15 @@ __mvn_filter_array()
 __mvn_plugin_goal()
 {
     local plugin goals suffix
-    local plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
+    local plugin_dir=${mvn_completion_ext_dir:-$HOME/.maven-completion.d}
 
     if [[ ${cur} == *:* ]] ; then
         local plugin="${cur%:*}"
-        if [ -n "${__mvn_comp_plugins["$plugin"]}" ]; then
-            local goals="$("$plugin_dir/${__mvn_comp_plugins[$plugin]}" goals | sed "s/^/$plugin:/;s/|/|$plugin:/g")"
+        if [ -n "${__mvn_comp_exts["$plugin"]}" ]; then
+            local goals="$("$plugin_dir/${__mvn_comp_exts[$plugin]}" goals | sed "s/^/$plugin:/;s/|/|$plugin:/g")"
             suffix=' '
         else
-            local goals="$(__mvn_filter_array "$cur" "${!__mvn_comp_plugins[@]}")"
+            local goals="$(__mvn_filter_array "$cur" "${!__mvn_comp_exts[@]}")"
             suffix=':'
         fi
         if [ -n "$goals" ]; then
@@ -411,30 +411,30 @@ __mvn_plugin_goal()
             COMPREPLY=( '' )
         fi
     else
-        COMPREPLY+=( $(compgen -W "${!__mvn_comp_plugins[*]}" -S ':' -- "${cur}") )
+        COMPREPLY+=( $(compgen -W "${!__mvn_comp_exts[*]}" -S ':' -- "${cur}") )
     fi
 }
 
 __mvn_init()
 {
-    unset __mvn_comp_plugins
-    typeset -gA __mvn_comp_plugins
+    unset __mvn_comp_exts
+    typeset -gA __mvn_comp_exts
 
-    local plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
+    local plugin_dir=${mvn_completion_ext_dir:-$HOME/.maven-completion.d}
 
     if [ -d "$plugin_dir" ]; then
         # shellcheck disable=SC2012
-        if [ "$(ls -tr "$plugin_dir" 2>/dev/null| tail -n1)" != "mc-plugin.cache" ]; then
-            true > "$plugin_dir/mc-plugin.cache"
-            for pi in "$plugin_dir/"*.mc-plugin; do
+        if [ "$(ls -tr "$plugin_dir" 2>/dev/null| tail -n1)" != "mc-ext.cache" ]; then
+            true > "$plugin_dir/mc-ext.cache"
+            for pi in "$plugin_dir/"*.mc-ext; do
                 for al in $($pi register); do
                     #echo >&2 "Registering: >>$al<<"
-                    echo "__mvn_comp_plugins[\"$al\"]=\"$(basename "$pi")\"" >> "$plugin_dir/mc-plugin.cache"
+                    echo "__mvn_comp_exts[\"$al\"]=\"$(basename "$pi")\"" >> "$plugin_dir/mc-ext.cache"
                 done 2>/dev/null
             done
         fi
         # shellcheck disable=SC1090
-        . "$plugin_dir/mc-plugin.cache"
+        . "$plugin_dir/mc-ext.cache"
     fi
     __mvn_inited="true"
 }
@@ -480,14 +480,14 @@ _mvn()
         local pl_options=''
         local prev_parts part pl gl part
 
-        local plugin_dir=${mvn_completion_plugin_dir:-$HOME/.maven-completion.d}
+        local plugin_dir=${mvn_completion_ext_dir:-$HOME/.maven-completion.d}
 
         IFS=" " read -r -a prev_parts <<< "$COMP_LINE"
         for part in "${prev_parts[@]}"; do
             local pl="${part%:*}"
             local gl="${part##*:}"
-            if [ -n "${__mvn_comp_plugins[$pl]}" ]; then
-                pl_options="${pl_options}$("$plugin_dir/${__mvn_comp_plugins[$pl]}" goalopts "$gl")"
+            if [ -n "${__mvn_comp_exts[$pl]}" ]; then
+                pl_options="${pl_options}$("$plugin_dir/${__mvn_comp_exts[$pl]}" goalopts "$gl")"
             fi
         done
         COMPREPLY=( $(compgen -S ' ' -W "${options}${pl_options}" -- "${cur}") )

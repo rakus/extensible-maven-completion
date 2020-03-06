@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-File:   mvn-comp-create-plugin.xsl
+File:   mvn-comp-create-extension.xsl
 
-Abstract: Create a mvn-comp plugin from a plugin.xml
+Abstract: Create a mvn-comp extension from a plugin.xml
 
 Author: Ralf Schandl
 -->
@@ -13,7 +13,7 @@ Author: Ralf Schandl
         <xsl:if test="not(mojos/mojo/goal)">
             <!-- No goals - nothing to do -->
             <xsl:message terminate="yes">
-                <xsl:text>Plugin </xsl:text>
+                <xsl:text>Maven plugin </xsl:text>
                 <xsl:value-of select="groupId/text()"/>
                 <xsl:text>:</xsl:text>
                 <xsl:value-of select="artifactId/text()"/>
@@ -25,7 +25,7 @@ Author: Ralf Schandl
 
         <!-- script header -->
         <xsl:text>#!/bin/sh&#xA;</xsl:text>
-        <xsl:text># maven-completion plugin for </xsl:text>
+        <xsl:text># maven-completion extension for </xsl:text>
         <xsl:value-of select="groupId/text()"/>
         <xsl:text>:</xsl:text>
         <xsl:value-of select="artifactId/text()"/>
@@ -37,7 +37,7 @@ Author: Ralf Schandl
         <xsl:value-of select="groupId/text()"/>
         <xsl:text>.</xsl:text>
         <xsl:value-of select="artifactId/text()"/>
-        <xsl:text>.mc-plugin</xsl:text>
+        <xsl:text>.mvmcomp-ext</xsl:text>
         <xsl:text>&#xA;&#xA;</xsl:text>
 
         <!-- function register -->
@@ -121,7 +121,7 @@ Author: Ralf Schandl
         <xsl:text>    goal_options "$2"&#xA;</xsl:text>
         <xsl:text>else&#xA;</xsl:text>
         <xsl:text>    echo "Usage:"&#xA;</xsl:text>
-        <xsl:text>    echo "    register         - show names to register the plugin"&#xA;</xsl:text>
+        <xsl:text>    echo "    register         - show names to register the extension"&#xA;</xsl:text>
         <xsl:text>    echo "    goals            - list goals (pipe separated)"&#xA;</xsl:text>
         <xsl:text>    echo "    goalopts &lt;goal>  - list options for given goal"&#xA;</xsl:text>
         <xsl:text>    exit 1&#xA;</xsl:text>
