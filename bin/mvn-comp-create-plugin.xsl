@@ -48,13 +48,6 @@ Author: Ralf Schandl
         <xsl:text>:</xsl:text>
         <xsl:value-of select="artifactId/text()"/>
         <xsl:text>"&#xA;</xsl:text>
-        <xsl:if test='groupId/text() = "org.apache.maven.plugins"'>
-            <!-- If it is a standard Maven plugin,
-            it is known without groupId -->
-            <xsl:text>    echo "</xsl:text>
-            <xsl:value-of select="artifactId/text()"/>
-            <xsl:text>"&#xA;</xsl:text>
-        </xsl:if>
         <xsl:if test='./goalPrefix'>
             <xsl:text>    echo "</xsl:text>
             <xsl:value-of select="goalPrefix/text()"/>
