@@ -165,6 +165,14 @@ create_comp_ext()
         log_error "" "$(echo "$err_stdout" | paste -sd' ')" "Completion Extension error msg to stderr"
     fi
 
+    local shellcheck
+    if ! shellcheck="$(shellcheck -fgcc "$comp_ext")"; then
+        log_error "OK" "ERRORS:" "Shellcheck Completion Extension"
+        echo "$shellcheck"
+    else
+        log_ok "Shellcheck Completion Extension"
+    fi
+
 }
 
 create_comp_ext "org.apache.maven.plugins" "maven-deploy-plugin" "2.7"
