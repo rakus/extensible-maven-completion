@@ -146,10 +146,10 @@ elif [ "$1" = "goalopts" ]; then
     fi
     goal_options "$2"
 else
-    echo "Usage:"
-    echo "    register         - show names to register the extension"
-    echo "    goals            - list goals (pipe separated)"
-    echo "    goalopts <goal>  - list options for given goal"
+    echo >&2 "Usage:"
+    echo >&2 "    register         - show names to register the extension"
+    echo >&2 "    goals            - list goals (pipe separated)"
+    echo >&2 "    goalopts <goal>  - list options for given goal"
     exit 1
 fi
 ```

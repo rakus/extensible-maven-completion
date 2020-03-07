@@ -157,6 +157,14 @@ create_comp_ext()
     else
         log_error "returns 0" "returned $?" "Run Completion Extension"
     fi
+
+    err_stdout="$($comp_ext wrong 2>/dev/null)"
+    if [ -z "$err_stdout" ]; then
+        log_ok "Completion Extension error msg to stderr"
+    else
+        log_error "" "$(echo "$err_stdout" | paste -sd' ')" "Completion Extension error msg to stderr"
+    fi
+
 }
 
 create_comp_ext "org.apache.maven.plugins" "maven-deploy-plugin" "2.7"

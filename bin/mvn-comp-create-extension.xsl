@@ -120,10 +120,10 @@ Author: Ralf Schandl
         <xsl:text>    fi&#xA;</xsl:text>
         <xsl:text>    goal_options "$2"&#xA;</xsl:text>
         <xsl:text>else&#xA;</xsl:text>
-        <xsl:text>    echo "Usage:"&#xA;</xsl:text>
-        <xsl:text>    echo "    register         - show names to register the extension"&#xA;</xsl:text>
-        <xsl:text>    echo "    goals            - list goals (pipe separated)"&#xA;</xsl:text>
-        <xsl:text>    echo "    goalopts &lt;goal>  - list options for given goal"&#xA;</xsl:text>
+        <xsl:text>    echo >&amp;2 "Usage:"&#xA;</xsl:text>
+        <xsl:text>    echo >&amp;2 "    register         - show names to register the extension"&#xA;</xsl:text>
+        <xsl:text>    echo >&amp;2 "    goals            - list goals (pipe separated)"&#xA;</xsl:text>
+        <xsl:text>    echo >&amp;2 "    goalopts &lt;goal>  - list options for given goal"&#xA;</xsl:text>
         <xsl:text>    exit 1&#xA;</xsl:text>
         <xsl:text>fi&#xA;</xsl:text>
 
