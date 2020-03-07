@@ -37,7 +37,7 @@ Author: Ralf Schandl
         <xsl:value-of select="groupId/text()"/>
         <xsl:text>.</xsl:text>
         <xsl:value-of select="artifactId/text()"/>
-        <xsl:text>.mvmcomp-ext</xsl:text>
+        <xsl:text>.mc-ext</xsl:text>
         <xsl:text>&#xA;&#xA;</xsl:text>
 
         <!-- function register -->

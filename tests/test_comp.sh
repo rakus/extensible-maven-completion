@@ -144,6 +144,14 @@ create_comp_ext()
         log_error "created" "missing" "Completion Extension created"
     fi
 
+    # shellcheck disable=SC2155
+    local cmt_fn="$(grep "^# FILE:" "$comp_ext" | sed 's/^# FILE: //')"
+    if [ "$cmt_fn" = "$(basename "$comp_ext")" ]; then
+        log_ok "Completion Extension file comment"
+    else
+        log_error "$(basename "$comp_ext")" "$cmt_fn" "Completion Extension file comment"
+    fi
+
     if "$comp_ext" register &>/dev/null; then
         log_ok "Completion Extension returns 0"
     else
