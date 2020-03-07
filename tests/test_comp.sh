@@ -6,7 +6,7 @@
 #
 # Idea and code from https://brbsix.github.io/2015/11/29/accessing-tab-completion-programmatically-in-bash/
 #
-# AUTHOR: Ralf Schandl <ralf.schandl@de.ibm.com>
+# AUTHOR: Ralf Schandl
 #
 # CREATED: 2020-03-04
 #
@@ -92,10 +92,13 @@ log_ok()
 }
 log_error()
 {
-    local expected="$1"
-    local got="$2"
-    shift 2
-    echo "$ERROR: $*, Expected: \"$expected\", Got: \"$got\""
+    local msg=$1
+    shift
+    if [ $# -gt 0 ]; then
+        printf '%s: %s, Expected: "%s", Actual: "%s"\n' "$ERROR" "$msg" "$1" "$2"
+    else
+        printf '%s: %s\n' "$ERROR" "$msg"
+    fi
     ((test_count = test_count + 1))
     ((error_count = error_count + 1))
 }
@@ -111,7 +114,7 @@ assert_completion()
     if [ "$expected" = "$actual" ]; then
         log_ok "$*"
     else
-        log_error "$expected" "$actual" "$*"
+        log_error "$*" "$expected" "$actual"
     fi
 }
 
@@ -141,7 +144,7 @@ create_comp_ext()
     if [ -e "$comp_ext" ]; then
         log_ok "Completion Extension created"
     else
-        log_error "created" "missing" "Completion Extension created"
+        log_error "Completion Extension NOT created"
     fi
 
     # shellcheck disable=SC2155
@@ -149,25 +152,25 @@ create_comp_ext()
     if [ "$cmt_fn" = "$(basename "$comp_ext")" ]; then
         log_ok "Completion Extension file comment"
     else
-        log_error "$(basename "$comp_ext")" "$cmt_fn" "Completion Extension file comment"
+        log_error "Completion Extension file comment" "$(basename "$comp_ext")" "$cmt_fn"
     fi
 
     if "$comp_ext" register &>/dev/null; then
         log_ok "Completion Extension returns 0"
     else
-        log_error "returns 0" "returned $?" "Run Completion Extension"
+        log_error "Run Completion Extension returned $?"
     fi
 
     err_stdout="$($comp_ext wrong 2>/dev/null)"
     if [ -z "$err_stdout" ]; then
         log_ok "Completion Extension error msg to stderr"
     else
-        log_error "" "$(echo "$err_stdout" | paste -sd' ')" "Completion Extension error msg to stderr"
+        log_error "Completion Extension error msg to stderr" "" "$(echo "$err_stdout" | paste -sd' ')"
     fi
 
     local shellcheck
     if ! shellcheck="$(shellcheck -fgcc "$comp_ext")"; then
-        log_error "OK" "ERRORS:" "Shellcheck Completion Extension"
+        log_error "Shellcheck Completion Extension reports findings:"
         echo "$shellcheck"
     else
         log_ok "Shellcheck Completion Extension"
@@ -183,9 +186,19 @@ _mvn >/dev/null 2>&1
 if [ -e "$mvn_completion_ext_dir/mc-ext.cache" ]; then
     log_ok "Check mc-ext.cache created"
 else
-    log_error "File mc-ext.cache created" "File missing"
+    log_error "File mc-ext.cache NOT created"
 fi
 
+# Test extension cache refreshed
+touch "$mvn_completion_ext_dir"/*.mc-ext
+mvn_comp_reset
+_mvn >/dev/null 2>&1
+# shellcheck disable=SC2012
+if [[ "$(ls -tr "$mvn_completion_ext_dir"/* | tail -n1)" = *"/mc-ext.cache" ]]; then
+    log_ok "Check mc-ext.cache refresh"
+else
+    log_error "File mc-ext.cache not refreshed"
+fi
 
 section "Lifecycle Completion"
 
@@ -284,7 +297,7 @@ check_profile_completion()
         log_ok "Profile Cache"
         export __mvn_last_pom_profiles
     else
-        log_error "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles" "Profile Cache"
+        log_error "Profile Cache" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
     fi
 
     # working with cached profiles
@@ -298,6 +311,15 @@ check_profile_completion()
     assert_completion "top-profile," mvn -P top
     assert_completion "delete," mvn -P del
     assert_completion "deep-profile," mvn -P deep
+
+    # reset cache
+    mvn_comp_reset
+    if [ -z "$__mvn_last_pom_profiles" ]; then
+        log_ok "Reset Profile Cache"
+        export __mvn_last_pom_profiles
+    else
+        log_error  "Reset Profile Cache" "" "$__mvn_last_pom_profiles"
+    fi
 
 }
 
