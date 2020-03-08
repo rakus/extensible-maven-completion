@@ -131,6 +131,7 @@ create_comp_ext()
     local comp_ext="$mvn_completion_ext_dir/$grp.$artifact.mc-ext"
 
     if [ ! -e "$mvn_plugin" ]; then
+        echo "Downloading $grp:$artifact:$version"
         mvn dependency:copy -DoutputDirectory="$test_m2" \
             -Dartifact="$grp:$artifact:$version" \
             -Dtransitive=false >/dev/null
@@ -159,6 +160,30 @@ create_comp_ext()
         log_ok "Completion Extension returns 0"
     else
         log_error "Run Completion Extension returned $?"
+    fi
+
+    local goals goalopts IFS
+    IFS='|' read -r -a goals < <("$comp_ext" goals)
+    for goal in "${goals[@]}"; do
+        goalopts="$("$comp_ext" goalopts "$goal")"
+        if [ -n "$goalopts" ]; then
+            if [[ "$goalopts" = "|"* ]]; then
+                log_ok "goalopts $goal: Leading pipe"
+            else
+                log_error "goalopts $goal: Leading pipe" "leading pipe" "$goalopts"
+            fi
+            if [[ "$goalopts" = *"|" ]]; then
+                log_error "goalopts $goal: No trailing pipe" "no trailing pipe" "$goalopts"
+            else
+                log_ok "goalopts $goal: No trailing pipe"
+            fi
+        fi
+    done
+
+    if [ -z "$("$comp_ext" goalopts "invalid goal")" ]; then
+        log_ok "goalopts: No output on invalid goal"
+    else
+        log_error "goalopts: No output on invalid goal" "" "$("$comp_ext" goalopts "invalid goal")"
     fi
 
     err_stdout="$($comp_ext wrong 2>/dev/null)"
