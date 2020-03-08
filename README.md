@@ -3,9 +3,10 @@
 
 This project provides a bash completion script for the Apache Maven build tool.
 
-This completion script is able to complete profile names by parsing the POMs and
-has a extension system to support completion of new Maven plugins. Completion
-extensions for new Maven plugins can be automatically generated via script.
+This completion script is able to complete profile names by parsing the POMs
+and has a extension system to support completion of new Maven plugins.
+Completion extensions for new Maven plugins can be automatically generated via
+script.
 
 The script is initially based on the [maven-completion from Juven
 Xu](https://github.com/juven/maven-bash-completion). A lot of stuff were added
@@ -13,21 +14,21 @@ or changed, but some parts are still from Juven Xu.
 
 ## Features
 
-### Completion-Plugins
+### Completion Extensions
 
-The completion script is able to load completion-extensions to support additional
-maven-plugins.
+The completion script is able to load completion extensions to support
+additional maven-plugins.
 
-A Completion-Extension is a executable scripts that provides support for completion
-for a maven-plugins. The available extensions are registered on the first
-invocation of the maven completion function and executed on demand.
+A completion extension is a executable scripts that provides support for
+completion for a Maven plugins. The available extensions are registered on the
+first invocation of the maven completion function and executed on demand.
 
 During registration the extension announces for which Maven plugin it provides
 completion support. This names can then be used for completion.
 
 Example: Working with the `maven-shade-plugin`
 
-On registration of the completion extension for the `maven-shade-plugin` it
+On registration of the completion extension for the `maven-shade-plugin`
 registers the names `org.apache.maven.plugins:maven-shade-plugin` and `shade`.
 
 Completion is started with the following command line:
@@ -67,20 +68,21 @@ default, so the completion will propose it with the non-default value `true`.
 
 So
 
-    $ mvn shade:shade  -Dsha<TAB>
+    $ mvn shade:shade -Dsha<TAB>
 
-will be completed to
+is completed to
 
     $ mvn shade:shade  -DshadeSourcesContent=true
 
 
-#### Creating Completion-Extensions
+#### Creating Completion Extensions
 
 Fortunately Maven has some rules for the content of the JAR file of a
-Maven plugin.  The jar has to contain the file `META-INF/maven/plugin.xml`. This
-file describes the plugin, its goals and the options supported by each goal.
+Maven plugin.  The jar has to contain the file `META-INF/maven/plugin.xml`.
+This file describes the plugin, its goals and the options supported by each
+goal.
 
-That makes creating a completion-extension quite easy. Just unpack the file
+That makes creating a completion extension quite easy. Just unpack the file
 `META-INF/maven/plugin.xml` from the JAR and filter it through XSLT.
 
 The script `bin/mvn-comp-create-extension.sh` with the XSL stylesheet
@@ -95,18 +97,40 @@ Created /home/.../.maven-completion.d/org.apache.maven.plugins.maven-shade-plugi
 
 To make creation of the completion extensions even easier, the script
 `mvn-comp-create-all-extensions.sh` searches the local repository for all jars
-that look like a Maven plugin and executes `mvn-comp-create-extension.sh` on it.
+that look like a Maven plugin and executes `mvn-comp-create-extension.sh` on
+it.
 
 A jar is detected as a plugin if it contains the words `maven` and `plugin` in
-its name. This will result in some false positive and produce error message. They can be ignored.
+its name. This will result in some false positive and produce error message.
+They can be ignored.
 
-#### Manually create a Completion-Plugin
+#### Manually creating a Completion Extension
 
 There is no reason to manually create a completion extension script. Anyway,
 here are the steps:
 
 Create a file in `~/.maven-completion.d` with a file name with the extension
 `mc-ext`.
+
+The extension has to support the following invocations:
+
+`some-name.mc-ext register`: This prints the name to register. It prints the full
+qualified plugin name `<groupId>:<artifactId>` and the `goalPrefix` (if
+available). Each on its own line.  Version numbers are __not__ part of the
+names.
+
+`some-name.mc-ext goals`: This prints the goals of the plugin separated with pipes
+(`|`). A leading pipe is not allowed!
+
+`some-name.mc-ext goalopts <goal>`: This prints the property definition command
+line options for the goal including the leading `-D`. The options are pipe
+(`|`) separated and need a _leading pipe_.  If the goal doesn't support any
+property an empty string is printed (`echo ""`). Boolean properties should be
+printed with their non-default value.
+
+For any other invocation a help text should be printed to STDERR and the script
+exits with a non-zero exit code. It __must not__ print anything to STDOUT in
+this case!
 
 Example - Completion Extension for the `maven-shade-plugin`:
 
@@ -225,14 +249,14 @@ As described in the section [Parsing Profiles](#parsing-profiles) the parsed
 profiles are cached in environment variables.
 
 Also the available plugins are cached in the file
-`~/.maven-completion.d/mc-plugin.cache`. This file is updated whenever the
-maven completion is first used in a new shell _and_ there is some `*.mc-plugin`
+`~/.maven-completion.d/mc-ext.cache`. This file is updated whenever the
+maven completion is first used in a new shell _and_ there is some `*.mc-ext`
 that is newer than the cache file.
 
 To delete the cached data in environment variables and to force the up-to-date
-check for completion-plugins execute the command `mvn_comp_reset`.  On the next
-invocation of the completion code the current pom will be parsed again and it
-is checked if the plugin-cache is up-to-date.
+check for completion extension execute the command `mvn_comp_reset`.  This will
+immediately update the extension cache and the POMs are parsed again the next
+time profile names are needed.
 
 
 ## Installation
@@ -247,8 +271,8 @@ is checked if the plugin-cache is up-to-date.
 
 In step 3 the script `bin/mvn-comp-create-all-plugins.sh` scans the local
 repository for all JARs that are named like a maven-plugin and will
-generate a completion-plugin for it. The completion-plugins are stored in the
-directory `$HOME/.mvn-completion.d`.
+generate a completion extension for it. The completion extension are stored in
+the directory `$HOME/.mvn-completion.d`.
 
 The script might issue error messages for JARs that seems to be a plugin by
 name but isn't one or plugins without goals (yes, this is possible). Just
