@@ -57,6 +57,42 @@ else
     ERROR="ERROR"
 fi
 
+section()
+{
+    echo ""
+    echo "$*"
+}
+log_ok()
+{
+    echo "$OK:    $*"
+    ((test_count = test_count + 1))
+}
+log_error()
+{
+    echo "$ERROR: $*"
+    ((test_count = test_count + 1))
+    ((error_count = error_count + 1))
+}
+
+# Log ok or error depending on comparison of expected and actual result.
+# $1: Message
+# $2: expected result
+# $3 actual result
+assert()
+{
+    local msg="$1"
+    local expected="$2"
+    local actual="$3"
+
+    if [ "$expected" = "$actual" ]; then
+        log_ok "$msg"
+    else
+        log_error "$(printf '%s, Expected \"%s\", Actual: \"%s\"' "$msg" "$expected" "$actual")"
+    fi
+}
+
+# Prints maven completions, pipe separated
+# $*: mvn command line
 get_completions(){
     local COMP_CWORD COMP_LINE COMP_POINT COMP_WORDS COMPREPLY=()
 
@@ -80,42 +116,18 @@ get_completions(){
     printf '%s\n' "${COMPREPLY[@]}" | LC_ALL=C sort | paste -sd ','
 }
 
-section()
-{
-    echo ""
-    echo "$*"
-}
-log_ok()
-{
-    echo "$OK:    $*"
-    ((test_count = test_count + 1))
-}
-log_error()
-{
-    local msg=$1
-    shift
-    if [ $# -gt 0 ]; then
-        printf '%s: %s, Expected: "%s", Actual: "%s"\n' "$ERROR" "$msg" "$1" "$2"
-    else
-        printf '%s: %s\n' "$ERROR" "$msg"
-    fi
-    ((test_count = test_count + 1))
-    ((error_count = error_count + 1))
-}
 
-
+# Asserts maven completion
+# $1: expected result
+# $*: mvn command line
 assert_completion()
 {
     local expected actual
     expected="$1"
     shift
-    actual="$(get_completions "$@")"
+    #actual="$(get_completions "$@")"
 
-    if [ "$expected" = "$actual" ]; then
-        log_ok "$*"
-    else
-        log_error "$*" "$expected" "$actual"
-    fi
+    assert "$*" "$expected" "$(get_completions "$@")"
 }
 
 
@@ -150,11 +162,7 @@ create_comp_ext()
 
     # shellcheck disable=SC2155
     local cmt_fn="$(grep "^# FILE:" "$comp_ext" | sed 's/^# FILE: //')"
-    if [ "$cmt_fn" = "$(basename "$comp_ext")" ]; then
-        log_ok "Completion Extension file comment"
-    else
-        log_error "Completion Extension file comment" "$(basename "$comp_ext")" "$cmt_fn"
-    fi
+    assert "Completion Extension file comment" "$(basename "$comp_ext")" "$cmt_fn"
 
     if "$comp_ext" register &>/dev/null; then
         log_ok "Completion Extension returns 0"
@@ -170,28 +178,19 @@ create_comp_ext()
             if [[ "$goalopts" = "|"* ]]; then
                 log_ok "goalopts $goal: Leading pipe"
             else
-                log_error "goalopts $goal: Leading pipe" "leading pipe" "$goalopts"
+                log_error "goalopts $goal: Missing leading pipe: \"$goalopts\""
             fi
-            if [[ "$goalopts" = *"|" ]]; then
-                log_error "goalopts $goal: No trailing pipe" "no trailing pipe" "$goalopts"
-            else
+            if [[ "$goalopts" != *"|" ]]; then
                 log_ok "goalopts $goal: No trailing pipe"
+            else
+                log_error "goalopts $goal: Unexpected trailing pipe: \"$goalopts\""
             fi
         fi
     done
 
-    if [ -z "$("$comp_ext" goalopts "invalid goal")" ]; then
-        log_ok "goalopts: No output on invalid goal"
-    else
-        log_error "goalopts: No output on invalid goal" "" "$("$comp_ext" goalopts "invalid goal")"
-    fi
+    assert "goalopts: No output on invalid goal" "" "$("$comp_ext" goalopts "invalid goal")"
 
-    err_stdout="$($comp_ext wrong 2>/dev/null)"
-    if [ -z "$err_stdout" ]; then
-        log_ok "Completion Extension error msg to stderr"
-    else
-        log_error "Completion Extension error msg to stderr" "" "$(echo "$err_stdout" | paste -sd' ')"
-    fi
+    assert  "Completion Extension error msg to stderr" "" "$($comp_ext wrong 2>/dev/null|paste -sd' ')"
 
     local shellcheck
     if ! shellcheck="$(shellcheck -fgcc "$comp_ext")"; then
@@ -318,12 +317,8 @@ check_profile_completion()
     cd "$script_dir/project" || exit 1
 
     get_completions mvn -P > /dev/null 2>&1
-    if [ "$__mvn_last_pom_profiles" = "deep-profile|delete|test|top-profile" ]; then
-        log_ok "Profile Cache"
-        export __mvn_last_pom_profiles
-    else
-        log_error "Profile Cache" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
-    fi
+    # shellcheck disable=SC2154  # __mvn_last_pom_profiles is set by completion code
+    assert "Profile Cache" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
 
     # working with cached profiles
     assert_completion "top-profile," mvn -P top
@@ -339,12 +334,7 @@ check_profile_completion()
 
     # reset cache
     mvn_comp_reset
-    if [ -z "$__mvn_last_pom_profiles" ]; then
-        log_ok "Reset Profile Cache"
-        export __mvn_last_pom_profiles
-    else
-        log_error  "Reset Profile Cache" "" "$__mvn_last_pom_profiles"
-    fi
+    assert  "Reset Profile Cache" "" "$__mvn_last_pom_profiles"
 
 }
 
