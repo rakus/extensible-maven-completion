@@ -167,7 +167,7 @@ EOF
 
 __mvn_get_settings_profiles()
 {
-    xsltproc - "$HOME/.m2/settings.xml"  << EOF
+    [ -e "$HOME/.m2/settings.xml" ] && xsltproc - "$HOME/.m2/settings.xml"  << EOF
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:m="http://maven.apache.org/POM/4.0.0"
@@ -246,7 +246,7 @@ EOF
 
 __mvn_get_settings_profiles()
 {
-    msxsl "$HOME/.m2/settings.xml" - << EOF | tr -d '\r'
+    [ -e "$HOME/.m2/settings.xml" ] && msxsl "$HOME/.m2/settings.xml" - << EOF | tr -d '\r'
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:m="http://maven.apache.org/POM/4.0.0"
@@ -286,7 +286,7 @@ __mvn_get_parent_pom_path()
 }
 __mvn_get_settings_profiles()
 {
-    xpath -q -e '/settings/profiles/profile/id/text()' "$HOME/.m2/settings.xml"
+    [ -e "$HOME/.m2/settings.xml" ] && xpath -q -e '/settings/profiles/profile/id/text()' "$HOME/.m2/settings.xml"
 }
 
 else
@@ -324,7 +324,7 @@ __mvn_get_parent_pom_path()
 }
 __mvn_get_settings_profiles()
 {
-    __mvn_get_pom_profiles "$HOME/.m2/settings.xml"
+    [ -e  "$HOME/.m2/settings.xml" ] && __mvn_get_pom_profiles "$HOME/.m2/settings.xml"
 }
 
 fi

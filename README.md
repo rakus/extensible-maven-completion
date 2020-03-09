@@ -1,6 +1,8 @@
 
 # Extensible MAVEN Completion for Bash
 
+[![Build status](https://ci.appveyor.com/api/projects/status/w55eoac2r5ywjcbf/branch/master?svg=true)](https://ci.appveyor.com/project/rakus/extensible-maven-completion/branch/master)
+
 This project provides a bash completion script for the Apache Maven build tool.
 
 This completion script is able to complete profile names by parsing the POMs
