@@ -293,7 +293,15 @@ or
     $ cd tests
     $ ./test_comp.sh
 
-The test ran successful on Fedora 31 and Windows 7 with "Git Bash".
+__IMPORTANT:__ Some test steps will fail, when profiles are defined in
+`$HOME/.m2/settings.xml`.
+
+The tests ran successful on
+
+* Fedora 31
+* Windows 7 with "Git Bash"
+* Ubuntu 16.04 (Travis CI)
+* Windows Server 2012 with "Git Bash" (Appveyor CI)
 
 ## Supporting Tools
 
