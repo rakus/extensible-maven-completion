@@ -153,21 +153,23 @@ create_comp_ext()
 
     "$script_dir/../bin/mvn-comp-create-extension.sh" "$mvn_plugin"
 
+    prefix="Plugin $artifact"
+
 
     if [ -e "$comp_ext" ]; then
-        log_ok "Completion Extension created"
+        log_ok "$prefix: Completion Extension created"
     else
-        log_error "Completion Extension NOT created"
+        log_error "$prefix: Completion Extension NOT created"
     fi
 
     # shellcheck disable=SC2155
     local cmt_fn="$(grep "^# FILE:" "$comp_ext" | sed 's/^# FILE: //')"
-    assert "Completion Extension file comment" "$(basename "$comp_ext")" "$cmt_fn"
+    assert "$prefix: Completion Extension file comment" "$(basename "$comp_ext")" "$cmt_fn"
 
     if "$comp_ext" register &>/dev/null; then
-        log_ok "Completion Extension returns 0"
+        log_ok "$prefix: Completion Extension returns 0"
     else
-        log_error "Run Completion Extension returned $?"
+        log_error "$prefix: Run Completion Extension returned $?"
     fi
 
     local goals goalopts IFS
@@ -176,28 +178,28 @@ create_comp_ext()
         goalopts="$("$comp_ext" goalopts "$goal")"
         if [ -n "$goalopts" ]; then
             if [[ "$goalopts" = "|"* ]]; then
-                log_ok "goalopts $goal: Leading pipe"
+                log_ok "$prefix: goalopts $goal: Leading pipe"
             else
-                log_error "goalopts $goal: Missing leading pipe: \"$goalopts\""
+                log_error "$prefix: goalopts $goal: Missing leading pipe: \"$goalopts\""
             fi
             if [[ "$goalopts" != *"|" ]]; then
-                log_ok "goalopts $goal: No trailing pipe"
+                log_ok "$prefix: goalopts $goal: No trailing pipe"
             else
-                log_error "goalopts $goal: Unexpected trailing pipe: \"$goalopts\""
+                log_error "$prefix: goalopts $goal: Unexpected trailing pipe: \"$goalopts\""
             fi
         fi
     done
 
-    assert "goalopts: No output on invalid goal" "" "$("$comp_ext" goalopts "invalid goal")"
+    assert "$prefix: goalopts: No output on invalid goal" "" "$("$comp_ext" goalopts "invalid goal")"
 
-    assert  "Completion Extension error msg to stderr" "" "$($comp_ext wrong 2>/dev/null|paste -sd' ')"
+    assert  "$prefix: Completion Extension error msg to stderr" "" "$($comp_ext wrong 2>/dev/null|paste -sd' ')"
 
     local shellcheck
     if ! shellcheck="$(shellcheck -fgcc "$comp_ext")"; then
-        log_error "Shellcheck Completion Extension reports findings:"
+        log_error "$prefix: Shellcheck Completion Extension reports findings:"
         echo "$shellcheck"
     else
-        log_ok "Shellcheck Completion Extension"
+        log_ok "$prefix: Shellcheck Completion Extension"
     fi
 
 }
@@ -298,7 +300,7 @@ assert_completion "-DskipTests "  mvn -DskipT
 
 #---------[ Profile Completion ]-----------------------------------------------
 
-check_profile_completion()
+check_profile_parsing()
 {
     mvn_completion_parser="$1"
     # shellcheck disable=SC1090
@@ -311,38 +313,53 @@ check_profile_completion()
         *grep*) parser="grep" ;;
         *) parser=UNKNOWN ;;
     esac
-    section "Testing profile completion with $parser (mvn_completion_parser=\"$mvn_completion_parser\")"
+    section "Profile parsing with $parser (mvn_completion_parser=\"$mvn_completion_parser\")"
 
     #mvn_comp_reset
     cd "$script_dir/project" || exit 1
 
     get_completions mvn -P > /dev/null 2>&1
     # shellcheck disable=SC2154  # __mvn_last_pom_profiles is set by completion code
-    assert "Profile Cache" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
+    assert "Parser $parser: Profile Cache - top" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
+    # shellcheck disable=SC2154  # __mvn_last_pom is set by completion code
+    assert "Parser $parser: Last Profile POM - top" "$script_dir/project/pom.xml" "$__mvn_last_pom"
 
-    # working with cached profiles
-    assert_completion "top-profile," mvn -P top
-    assert_completion "delete," mvn -P del
-    assert_completion "deep-profile,,delete,,test,,top-profile," mvn "-P "
-    assert_completion "-Pdeep-profile,,-Pdelete,,-Ptest,,-Ptop-profile," mvn "-P"
-
-    # always parsing for profiles as __mvn_last_pom does not match
+    # reparsing for profiles as __mvn_last_pom does not match
     cd "$script_dir/project/module-1" || exit 1
-    assert_completion "top-profile," mvn -P top
-    assert_completion "delete," mvn -P del
-    assert_completion "deep-profile," mvn -P deep
+    get_completions mvn -P > /dev/null 2>&1
+    # shellcheck disable=SC2154  # __mvn_last_pom_profiles is set by completion code
+    assert "Parser $parser: Profile Cache - module-1" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
+    # shellcheck disable=SC2154  # __mvn_last_pom is set by completion code
+    assert "Parser $parser: Last Profile POM - module-1" "$script_dir/project/module-1/pom.xml" "$__mvn_last_pom"
 
     # reset cache
     mvn_comp_reset
-    assert  "Reset Profile Cache" "" "$__mvn_last_pom_profiles"
+    assert  "Parser $parser: Reset Profile Cache" "" "$__mvn_last_pom_profiles"
+    assert  "Parser $parser: Reset Last Profile POM" "" "$__mvn_last_pom"
 
+    unset mvn_completion_parser
 }
 
-check_profile_completion
-check_profile_completion msxsl
-check_profile_completion xpath
-check_profile_completion grep
+check_profile_parsing
+check_profile_parsing msxsl
+check_profile_parsing xpath
+check_profile_parsing grep
 
+section "Profile completion"
+
+# shellcheck disable=SC1090
+source "$mvn_completion_script"
+
+assert_completion "top-profile," mvn -P top
+assert_completion "delete," mvn -P del
+assert_completion "deep-profile,,delete,,test,,top-profile," mvn "-P "
+assert_completion "-Pdeep-profile,,-Pdelete,,-Ptest,,-Ptop-profile," mvn "-P"
+assert_completion "-Ptop-profile," mvn -Ptop
+assert_completion "-Ptop-profile,delete," mvn -Ptop-profile,del
+assert_completion "-Ptop-profile,deep-profile,,-Ptop-profile,delete," mvn -Ptop-profile,de
+assert_completion "top-profile," mvn --activate-profiles top
+assert_completion "top-profile,deep-profile,,top-profile,delete," mvn --activate-profiles top-profile,de
+assert_completion "top-profile,delete," mvn --activate-profiles top-profile,del
 
 echo "-----"
 echo "Tests: $test_count  Failed: $error_count"
