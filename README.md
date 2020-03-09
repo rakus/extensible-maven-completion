@@ -1,6 +1,7 @@
 
 # Extensible MAVEN Completion for Bash
 
+[![Build Status](https://www.travis-ci.org/rakus/extensible-maven-completion.svg?branch=master)](https://www.travis-ci.org/rakus/extensible-maven-completion)
 [![Build status](https://ci.appveyor.com/api/projects/status/w55eoac2r5ywjcbf/branch/master?svg=true)](https://ci.appveyor.com/project/rakus/extensible-maven-completion/branch/master)
 
 This project provides a bash completion script for the Apache Maven build tool.

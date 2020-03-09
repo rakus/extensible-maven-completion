@@ -1,0 +1,28 @@
+---
+language: generic
+dist: xenial
+
+# Use the new container infrastructure
+sudo: false
+
+branches:
+    except:
+        - gh-pages
+
+cache:
+    directories:
+    - $HOME/.m2
+
+addons:
+  apt:
+    packages:
+    - libxml-xpath-perl
+    - xsltproc
+
+script:
+  - sed  -i '/<profiles>/,/<\/profiles>/d' $HOME/.m2/settings.xml
+  - cat $HOME/.m2/settings.xml
+  # Run the test script
+  - tests/test_comp.sh
+  - shellcheck _maven-completion.bash bin/*.sh tests/test_comp.sh
+
