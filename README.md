@@ -264,6 +264,22 @@ time profile names are needed.
 
 ## Installation
 
+### Prepare
+
+On a Linux system there is nothing to do. The XSLT processor `xsltproc` should
+be installed by default. If not check your package manager.
+
+_Git For Windows_ includes the `xsltproc`, but it might not work. Just execute
+`xsltproc` and check the output. If a help text is shown - good. If a message
+about missing libraries is printed - bad. In the latter case, download the
+[msxsl.exe](https://www.microsoft.com/en-us/download/details.aspx?id=21714)
+XSLT processor and put it into some directory included in your path.
+
+A XSLT processor is essential for the automatic creation of completion
+extensions for Maven plugins.
+
+### Execute
+
 1. Copy the file `_maven-completion.bash` to `$HOME/.maven-completion.bash`
 2. Add the following line to your `.bashrc`:
    ```
@@ -278,7 +294,7 @@ generate a completion extension for it. The completion extension are stored in
 the directory `$HOME/.mvn-completion.d`.
 
 The script might issue error messages for JARs that seems to be a plugin by
-name but isn't one or plugins without goals (yes, this is possible). Just
+name but aren't one or plugins without goals (yes, this is possible). Just
 ignore them.
 
 ## Testing
@@ -294,7 +310,8 @@ or
     $ ./test_comp.sh
 
 __IMPORTANT:__ Some test steps will fail, when profiles are defined in
-`$HOME/.m2/settings.xml`.
+`$HOME/.m2/settings.xml`. Also a XSLT processor is needed (see section
+[Prepare](#prepare)).
 
 The tests ran successful on
 
