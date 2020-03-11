@@ -131,6 +131,32 @@ assert_completion()
 }
 
 
+section "Check for XSLT processor"
+
+has_xsltprocessor=''
+if type xsltproc &>/dev/null; then
+    # xsltproc is available -lets see if it works.
+    if xsltproc --version &>/dev/null; then
+        echo "$OK:    xsltproc available and working"
+        has_xsltprocessor='true'
+    else
+        echo "$ERROR: xsltproc available but NOT WORKING"
+    fi
+fi
+if type msxsl &>/dev/null; then
+    echo "$OK:    msxsl available"
+    has_xsltprocessor='true'
+fi
+
+if [ -z "$has_xsltprocessor" ]; then
+    echo "$ERROR: No XSLT processor available. Checked for xsltproc and msxsl."
+    echo "$ERROR: Can't continue"
+    exit 1
+fi
+
+
+
+
 section "Downloading maven plugins and creating completion extensions"
 
 create_comp_ext()
