@@ -5,6 +5,9 @@ File:   mvn-comp-create-extension.xsl
 Abstract: Create a mvn-comp extension from a plugin.xml
 
 Author: Ralf Schandl
+
+version=0.1.0
+
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <xsl:output method="text" encoding="UTF-8"/>

@@ -441,6 +441,10 @@ __mvn_init()
 
 _mvn()
 {
+    if [ "${COMP_LINE:-UnSet}" = "UnSet" ]; then
+        echo "extensible-maven-completion v0.1.0"
+        return
+    fi
     local cur prev
     COMPREPLY=()
     _get_comp_words_by_ref -n : cur prev

@@ -16,6 +16,8 @@
 # AUTHOR: Ralf Schandl
 #
 
+version=0.1.0
+
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 script_name="$(basename "$0")"
 
@@ -24,7 +26,7 @@ if ! command -v mvn >/dev/null 2>&1; then
     exit 1
 fi
 
-repo="$(mvn -B help:evaluate -Dexpression=settings.localRepository | grep -v '^\[')"
+repo="$(mvn -q -B help:evaluate -Dexpression=settings.localRepository -DforceStdout=true)"
 if [[ "$repo" = ?:* ]]; then
     # path starts with any char followed by colon -> looks like Windows
     # Change backslashes to slashes
@@ -32,6 +34,7 @@ if [[ "$repo" = ?:* ]]; then
 fi
 
 if [ $# -gt 0 ]; then
+    echo "$script_name  v$version"
     echo
     echo "Usage: $script_name"
     echo

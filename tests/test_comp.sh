@@ -16,11 +16,16 @@ script_dir="$(cd "$(dirname "$0")" && pwd)" || exit 1
 #script_name="$(basename "$0")"
 #script_file="$script_dir/$script_name"
 
-mvn_completion_script="${1:-$script_dir/../_maven-completion.bash}"
+mvn_completion_script="$script_dir/../_maven-completion.bash"
 # shellcheck disable=SC1090
 source "$mvn_completion_script"
 
 cd "$script_dir" || exit 1
+
+version=""
+if [ -n "${1:-}" ]; then
+    version="$1"
+fi
 
 test_count=0
 error_count=0
@@ -35,13 +40,15 @@ if [ "$OSTYPE" = "msys" ]; then
     [ -e "/etc/profile.d/git-prompt.sh" ] && source  "/etc/profile.d/git-prompt.sh"
 fi
 
-export mvn_completion_ext_dir="$script_dir/workdir/maven-completion.d"
+test_dir="$script_dir/workdir"
+
+export mvn_completion_ext_dir="$test_dir/maven-completion.d"
 mkdir -p "$mvn_completion_ext_dir"
 # shellcheck disable=SC1090
 source "$mvn_completion_script"
 rm -f "$mvn_completion_ext_dir/mc-ext.cache"
 
-export test_m2="$script_dir/workdir/m2"
+export test_m2="$test_dir/m2"
 mkdir -p "$test_m2"
 
 if ! declare -F _mvn &>/dev/null; then
@@ -110,7 +117,12 @@ get_completions(){
     COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
 
     # execute completion function
-    _mvn
+    cat /dev/null > "$test_dir/_mvn.out"
+    _mvn > "$test_dir/_mvn.out" 2>&1
+
+    if [ -s "$test_dir/_mvn.out" ]; then
+        log_error "_mvn produced output to stdout or stderr"
+    fi
 
     # print completions to stdout
     printf '%s\n' "${COMPREPLY[@]}" | LC_ALL=C sort | paste -sd ','
@@ -155,6 +167,30 @@ if [ -z "$has_xsltprocessor" ]; then
 fi
 
 
+section "Check version"
+if [[ "$(_mvn)" = "extensible-maven-completion v"* ]]; then
+    log_ok "direct call to _mvn prints version"
+else
+    log_error "direct call to _mvn failed to prints version"
+fi
+
+mvn_vers="$(_mvn | sed 's/^.* v//')"
+all_vers="$("$script_dir/../bin/mvn-comp-create-all-extensions.sh" --help | head -n1 | sed 's/^.* v//')"
+ext_vers="$("$script_dir/../bin/mvn-comp-create-extension.sh" --help | head -n1 | sed 's/^.* v//')"
+xsl_vers="$(grep '^version' "$script_dir/../bin/mvn-comp-create-extension.xsl" | sed 's/^.*=//')"
+
+if [ "$mvn_vers" = "$all_vers" ] && [ "$mvn_vers" = "$ext_vers" ] && [ "$mvn_vers" = "$xsl_vers" ]; then
+    log_ok "_mvn, scripts and xsl have same version"
+    if [ -n "$version" ]; then
+        if [ "$mvn_vers" = "$version" ]; then
+            log_ok "version is as expected: $version"
+        else
+            log_error "unexpected version \"$mvn_vers\". Expected: \"$version\""
+        fi
+    fi
+else
+    log_error "_mvn, scripts and xsl have different versions. Run 'make version_check'"
+fi
 
 
 section "Downloading maven plugins and creating completion extensions"
@@ -234,7 +270,7 @@ create_comp_ext "org.apache.maven.plugins" "maven-deploy-plugin" "2.7"
 create_comp_ext "org.apache.maven.plugins" "maven-dependency-plugin" "2.10"
 
 # Test extension cache created
-_mvn >/dev/null 2>&1
+COMP_LINE="mvn" _mvn >/dev/null 2>&1
 if [ -e "$mvn_completion_ext_dir/mc-ext.cache" ]; then
     log_ok "Check mc-ext.cache created"
 else
@@ -244,9 +280,8 @@ fi
 # Test extension cache refreshed
 touch "$mvn_completion_ext_dir"/*.mc-ext
 mvn_comp_reset
-_mvn >/dev/null 2>&1
 # shellcheck disable=SC2012
-if [[ "$(ls -tr "$mvn_completion_ext_dir"/* | tail -n1)" = *"/mc-ext.cache" ]]; then
+if [[ "$(ls -t "$mvn_completion_ext_dir"/* | head -n1)" = *"/mc-ext.cache" ]]; then
     log_ok "Check mc-ext.cache refresh"
 else
     log_error "File mc-ext.cache not refreshed"
@@ -292,7 +327,7 @@ assert_completion "install " mvn inst
 assert_completion "deploy " mvn depl
 
 # reenable extensions
-export mvn_completion_ext_dir="$script_dir/workdir/maven-completion.d"
+export mvn_completion_ext_dir="$test_dir/maven-completion.d"
 mvn_comp_reset
 
 
@@ -389,6 +424,7 @@ assert_completion "top-profile,delete," mvn --activate-profiles top-profile,del
 
 echo "-----"
 echo "Tests: $test_count  Failed: $error_count"
+
 
 [ $error_count -ne 0 ] && exit 1
 exit 0

@@ -9,11 +9,24 @@
 # CREATED: 2019-11-17
 #
 
+version=0.1.0
+
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 script_name="$(basename "$0")"
 
 ext_dir=${mvn_completion_ext_dir:-$HOME/.maven-completion.d}
 xsl_file="mvn-comp-create-extension.xsl"
+
+
+if [ $# -eq 0 ] || [[ " $*" = *' --help'* ]] || [[ " $*" = *' --version'* ]]; then
+    echo "$script_name  v$version"
+    echo
+    echo "Usage: $script_name <plugin-jar-file> ..."
+    echo
+    echo "Creates completion-extensions for all given maven-plugin jars."
+    echo
+    exit 1
+fi
 
 typeset -a xslt_cmd
 if [ "$OSTYPE" = "msys" ]; then
@@ -44,6 +57,11 @@ create_extension()
 {
     jar="$1"
 
+    if [ ! -r "$jar" ]; then
+        echo >&2 "Jar does not exist / not readable: $jar"
+        return
+    fi
+
     if ! plugin_xml="$(unzip -qc "$jar" META-INF/maven/plugin.xml 2>/dev/null)"; then
         echo >&2 "ERROR: Not a mvn plugin (META-INF/maven/plugin.xml not found): $jar"
         return 1
@@ -70,22 +88,14 @@ create_extension()
     echo "Created $target_file from $(basename "$jar")"
 }
 
-if [ $# -eq 0 ]; then
-    echo
-    echo "Usage: $script_name <plugin-jar-file> ..."
-    echo
-    echo "Creates completion-extensions for all given maven-plugin jars."
-    echo
-else
-    if [ ! -e "$ext_dir" ]; then
-        if ! mkdir "$ext_dir"; then
-            echo >&2 "ERROR: Can't create mvn completion extensions dir: $ext_dir"
-            exit 1
-        fi
+if [ ! -d "$ext_dir" ]; then
+    if ! mkdir "$ext_dir"; then
+        echo >&2 "ERROR: Can't create mvn completion extensions dir: $ext_dir"
+        exit 1
     fi
-
-    for jar in "$@"; do
-        create_extension "$jar"
-    done
 fi
+
+for jar in "$@"; do
+    create_extension "$jar"
+done
 
