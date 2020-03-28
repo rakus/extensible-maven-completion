@@ -23,6 +23,5 @@ script:
   - sed  -i '/<profiles>/,/<\/profiles>/d' $HOME/.m2/settings.xml
   - cat $HOME/.m2/settings.xml
   # Run the test script
-  - tests/test_comp.sh
-  - shellcheck _maven-completion.bash bin/*.sh tests/test_comp.sh
+  - make all
 
