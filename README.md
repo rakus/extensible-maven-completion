@@ -98,10 +98,9 @@ Example:
 Created /home/.../.maven-completion.d/org.apache.maven.plugins.maven-shade-plugin.mc-ext from maven-shade-plugin-3.2.1.jar
 ```
 
-To make creation of the completion extensions even easier, the script
-`mvn-comp-create-all-extensions.sh` searches the local repository for all jars
-that look like a Maven plugin and executes `mvn-comp-create-extension.sh` on
-it.
+To make creation of the completion extensions even easier, the command
+`mvn-comp-create-extension.sh --all` searches the local repository for all jars
+that look like a Maven plugin and creates a completion extension for them.
 
 A jar is detected as a plugin if it contains the words `maven` and `plugin` in
 its name. This will result in some false positive and produce error message.
@@ -285,10 +284,10 @@ extensions for Maven plugins.
    ```
    [ -f "$HOME/.maven-completion.bash" ] && . "$HOME/.maven-completion.bash"
    ```
-3. Run the script `bin/mvn-comp-create-all-plugins.sh` (see below)
+3. Run the command `bin/mvn-comp-create-extension.sh --all` (see below)
 4. Start a new shell (or source `.maven-completion.bash`)
 
-In step 3 the script `bin/mvn-comp-create-all-plugins.sh` scans the local
+In step 3 the command `bin/mvn-comp-create-extension.sh --all` scans the local
 repository for all JARs that are named like a maven-plugin and will
 generate a completion extension for it. The completion extension are stored in
 the directory `$HOME/.mvn-completion.d`.

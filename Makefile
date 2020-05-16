@@ -8,7 +8,7 @@ VERSION = 0.1.0
 
 NAME = extensible-maven-completion
 ZIP_NAME = $(NAME)-$(VERSION).zip
-ZIP_CONTENT = README.md INSTALL _maven-completion.bash bin/mvn-comp-create-all-extensions.sh bin/mvn-comp-create-extension.sh bin/mvn-comp-create-extension.xsl
+ZIP_CONTENT = README.md INSTALL _maven-completion.bash bin/mvn-comp-create-extension.sh bin/mvn-comp-create-extension.xsl
 
 .PHONY: zip html clean check help tests
 
