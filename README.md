@@ -11,7 +11,7 @@ and has a extension system to support completion of new Maven plugins.
 Completion extensions for new Maven plugins can be automatically generated via
 script.
 
-The script is initially based on the [maven-completion from Juven
+This completion script is initially based on the [maven-completion from Juven
 Xu](https://github.com/juven/maven-bash-completion). A lot of stuff were added
 or changed, but some parts are still from Juven Xu.
 
@@ -99,12 +99,10 @@ Created /home/.../.maven-completion.d/org.apache.maven.plugins.maven-shade-plugi
 ```
 
 To make creation of the completion extensions even easier, the command
-`mvn-comp-create-extension.sh --all` searches the local repository for all jars
-that look like a Maven plugin and creates a completion extension for them.
-
-A jar is detected as a plugin if it contains the words `maven` and `plugin` in
-its name. This will result in some false positive and produce error message.
-They can be ignored.
+`mvn-comp-create-extension.sh --all` searches the local repository for all
+Maven plugins and creates a completion extension for each. The script tries
+to identify the highest version of each plugin, but Maven versioning is quite
+complex.
 
 #### Manually creating a Completion Extension
 
@@ -288,13 +286,11 @@ extensions for Maven plugins.
 4. Start a new shell (or source `.maven-completion.bash`)
 
 In step 3 the command `bin/mvn-comp-create-extension.sh --all` scans the local
-repository for all JARs that are named like a maven-plugin and will
-generate a completion extension for it. The completion extension are stored in
-the directory `$HOME/.mvn-completion.d`.
+repository for Maven plugins will generate a completion extension for each. The
+completion extension are stored in the directory `$HOME/.mvn-completion.d`.
 
-The script might issue error messages for JARs that seems to be a plugin by
-name but aren't one or plugins without goals (yes, this is possible). Just
-ignore them.
+The script might issue error messages for plugins without goals (yes, this is
+possible). Just ignore them.
 
 ## Testing
 

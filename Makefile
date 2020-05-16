@@ -2,8 +2,11 @@
 # Makefile to build ZIP and README.html
 #
 
-# If this is changed, the version in th completion and support scripts and the
-# xsl has to be changed too.
+# If this is changed, the version in
+#   - _maven-completion.bash
+#   - bin/mvn-comp-create-extension.sh
+#   - bin/mvn-comp-create-extension.xsl th
+# has to be changed too.
 VERSION = 0.1.0
 
 NAME = extensible-maven-completion

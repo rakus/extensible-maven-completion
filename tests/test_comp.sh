@@ -175,7 +175,7 @@ else
 fi
 
 mvn_vers="$(_mvn | sed 's/^.* v//')"
-ext_vers="$("$script_dir/../bin/mvn-comp-create-extension.sh" --help | head -n1 | sed 's/^.* v//')"
+ext_vers="$("$script_dir/../bin/mvn-comp-create-extension.sh" --version | head -n1 | sed 's/^.* v//')"
 xsl_vers="$(grep '^version' "$script_dir/../bin/mvn-comp-create-extension.xsl" | sed 's/^.*=//')"
 
 if [ "$mvn_vers" = "$ext_vers" ] && [ "$mvn_vers" = "$xsl_vers" ]; then
