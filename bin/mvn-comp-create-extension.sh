@@ -70,6 +70,7 @@ create_extension()
     tmp_file="$(mktemp)"
 
     # tr -d '\r' to replace CRLF with LF on Windows
+    set -o pipefail
     if ! echo "$plugin_xml"| "${xslt_cmd[@]}" | tr -d '\r' > "$tmp_file"; then
         echo >&2 "ERROR: XSLT failed"
         rm -f "$tmp_file"
