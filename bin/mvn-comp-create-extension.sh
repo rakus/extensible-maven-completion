@@ -116,6 +116,70 @@ exist_filter ()
     done
 }
 
+
+#
+# Normalize a version:
+# - format number with 4 digits with leading zeros
+# - replace 'SNAPSHOT' with '-000' ('-' sorts before '0')
+# - replace 'rc' with ',000' (',' sorts before '-')
+# - replace 'beta' with '+000' ('+' sorts before ',')
+# - replace 'alpha' with '*000' ('*' sorts before '+')
+# - 'final' or 'release' are ignored
+normalize_version()
+{
+    #echo "----[ $1 ]-------------------"
+    local IFS='-.'
+    local p result=''
+    for p in $1; do
+        if [[ $p =~ ^[0-9]*$ ]]; then
+            p=$(printf '%04d' $((p + 0)) )
+        else
+            case "${p,,}" in
+                final|release)
+                    continue
+                    ;;
+                snapshot)
+                    p="${p,,}"
+                    p="${p/snapshot/-000}"
+                    ;;
+                rc*)
+                    p="${p,,}"
+                    p="${p/rc/,000}"
+                    ;;
+                beta*)
+                    p="${p,,}"
+                    p="${p/beta/+000}"
+                    ;;
+                alpha*)
+                    p="${p,,}"
+                    p="${p/alpha/*000}"
+                    ;;
+            esac
+        fi
+
+        [ -n "$result" ] && result="$result."
+        result="$result$p"
+    done
+    echo "$result"
+}
+
+
+#
+# Replace 'dir|version|jar' with 'dir|normalized-version|version|jar'
+#
+prep_version_for_sort()
+{
+    local line dir version fn nvers
+    while read -r line; do
+        dir="$(echo "$line" | cut '-d|' -f1)"
+        version="$(echo "$line" | cut '-d|' -f2)"
+        fn="$(echo "$line" | cut '-d|' -f3)"
+
+        nvers="$(normalize_version "$version")"
+        printf "%s|%s|%s|%s\n" "$dir" "$nvers" "$version" "$fn"
+    done
+}
+
 #
 # Search the m2 repository directory for maven plugins and return a list of
 # jars to convert.  This functions tries to sort by version number and only
@@ -126,16 +190,6 @@ exist_filter ()
 #
 scan_repo_dir()
 {
-    typeset -a sort_cmd
-
-    if sort -k2V /dev/null &>/dev/null; then
-        # Sort first by dir (-k1,1) and then by version reverse (-k2,2rV -- 'V' enables version sorting)
-        sort_cmd=( sort '-t|' '-k1,1' '-k2,2rV' )
-    else
-        # just sort -- not so good (2.8 is higher than 2.10)
-        sort_cmd=( sort -r )
-    fi
-
     typeset -a matches
     if [ $# -gt 0 ]; then
         matches=( '(' )
@@ -151,17 +205,21 @@ scan_repo_dir()
     # Here it gets complicated:
     # 1. find all *.pom files that describe a maven plugin
     # 2. replace extension '.pom' with '.jar'
-    # 3. list exiting files, redirect stderr
+    # 3. filter out non existing jars
     # 4. Split into 3 pipe-separated fields: dir|version|jar-file
-    # 5. Sort it (see above)
-    # 6. remove dulicate lower versions
+    # 5. Insert normalized version: dir|normalized-version|version|jar-file
+    # 6. Sort reverse
+    # 7. remove dulicate lower versions
+    # 8. Cut out normalized version: dir|version|jar-file
     # 7. Now replace the pipes with slashes to get the proper filename again
-    find "$repo_dir" -name \*.pom "${matches[@]}" -exec grep -q "<packaging>maven-plugin</packaging>" {} \; -print |
+    LC_ALL=C find "$repo_dir" -name \*.pom "${matches[@]}" -exec grep -q "<packaging>maven-plugin</packaging>" {} \; -print |
         sed 's/\.pom$/.jar/' |
         exist_filter |
         sed 's%\(^.*\)/\([0-9][^/]*\)/\([^/]*\.jar\)$%\1|\2|\3%' |
-        "${sort_cmd[@]}" |
+        prep_version_for_sort |
+        sort -r |
         awk -F"|" '!_[$1]++' |
+        cut '-d|' -f1,3,4 |
         sed "s%|%/%g"
 }
 
