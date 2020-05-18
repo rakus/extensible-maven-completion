@@ -108,6 +108,14 @@ create_extension()
     echo "Created $target_file from $(basename "$jar")"
 }
 
+exist_filter ()
+{
+    local d;
+    while read -r d; do
+        [[ -e $d ]] && echo "$d";
+    done
+}
+
 #
 # Search the m2 repository directory for maven plugins and return a list of
 # jars to convert.  This functions tries to sort by version number and only
@@ -118,44 +126,43 @@ create_extension()
 #
 scan_repo_dir()
 {
-    if sort -k2V /dev/null &>/dev/null; then
-        # Version-sort supported -- good
-        # Here it gets complicated:
-        # 1. find all *.pom files that describe a maven plugin
-        # 2. replace extension '.pom' with '.jar'
-        # 3. list exiting files, redirect stderr
-        # 4. Split into 3 pipe-separated fields: dir|version|jar-file
-        # 5. Sort first by dir (-k1,1) and then by version reverse (-k2,2rV -- 'V' enables version sorting)
-        # 6. remove dulicate lower versions
-        # 7. Now replace the pipes with slashes to get the proper filename again
-        #find "$repo_dir" -name .cache -prune -o \( -name "*maven-plugin-*.jar" -o -name "maven-*-plugin-*.jar" \) -print |
-        find "$repo_dir" -name \*.pom -exec grep -l "<packaging>maven-plugin</packaging>" {} \; |
-            sed 's/\.pom$/.jar/' |
-            xargs -d$'\n' ls 2>/dev/null |
-            sed 's%\(^.*\)/\([0-9][^/]*\)/\([^/]*\.jar\)$%\1|\2|\3%' |
-            sort '-t|' -k1,1 -k2,2rV |
-            awk -F"|" '!_[$1]++' |
-            sed "s%|%/%g"
-        #
-    else
-        # Version-sort NOT supported -- not so good
-        # 1. find all *.pom files that describe a maven plugin
-        # 2. replace extension '.pom' with '.jar'
-        # 3. list exiting files, redirect stderr
-        # 4. Sort list
-        # 5. Split into 3 pipe-separated fields: dir|version|jar-file
-        # 6. remove dulicate lower versions
-        # 7. Now replace the pipes with slashes to get the proper filename again
-        find "$repo_dir" -name \*.pom -exec grep -l "<packaging>maven-plugin</packaging>" {} \; |
-            sed 's/\.pom$/.jar/' |
-            xargs -d$'\n' ls 2>/dev/null |
-            sort -r |
-            sed 's%\(^.*\)/\([0-9][^/]*\)/\([^/]*\.jar\)$%\1|\2|\3%' |
-            awk -F"|" '!_[$1]++' |
-            sed "s%|%/%g"
-        exit
+    typeset -a sort_cmd
 
+    if sort -k2V /dev/null &>/dev/null; then
+        # Sort first by dir (-k1,1) and then by version reverse (-k2,2rV -- 'V' enables version sorting)
+        sort_cmd=( sort '-t|' '-k1,1' '-k2,2rV' )
+    else
+        # just sort -- not so good (2.8 is higher than 2.10)
+        sort_cmd=( sort -r )
     fi
+
+    typeset -a matches
+    if [ $# -gt 0 ]; then
+        matches=( '(' )
+        for p in "$@"; do
+            if [ ${#matches[@]} -gt 1 ]; then
+                matches+=(-o )
+            fi
+            matches+=( -path "*$p*" )
+        done
+        matches+=( ')' '-a' )
+    fi
+
+    # Here it gets complicated:
+    # 1. find all *.pom files that describe a maven plugin
+    # 2. replace extension '.pom' with '.jar'
+    # 3. list exiting files, redirect stderr
+    # 4. Split into 3 pipe-separated fields: dir|version|jar-file
+    # 5. Sort it (see above)
+    # 6. remove dulicate lower versions
+    # 7. Now replace the pipes with slashes to get the proper filename again
+    find "$repo_dir" -name \*.pom "${matches[@]}" -exec grep -q "<packaging>maven-plugin</packaging>" {} \; -print |
+        sed 's/\.pom$/.jar/' |
+        exist_filter |
+        sed 's%\(^.*\)/\([0-9][^/]*\)/\([^/]*\.jar\)$%\1|\2|\3%' |
+        "${sort_cmd[@]}" |
+        awk -F"|" '!_[$1]++' |
+        sed "s%|%/%g"
 }
 
 show_help()
@@ -166,11 +173,13 @@ show_help()
     echo "    Creates completion-extensions for all given maven-plugin jars."
     echo
     echo " or"
-    echo "    $script_name --all"
+    echo "    $script_name --all [name-part...]"
     echo
     echo "    Creates completion-extensions for all maven-plugins found in the local"
     echo "    repository. By default this is ~/.m2/repository/, but this scritpt asks"
     echo "    Maven for the actual repository."
+    echo "    If one or more name-parts are given, only maven plagins are processed"
+    echo "    that match any of the parts."
     echo
     echo " or"
     echo "    $script_name [ --help | --version ]"
@@ -228,7 +237,7 @@ if [ "$search_the_repo" = 'true' ]; then
     init_repo_path
     printf "it's %s\n" "$repo_dir"
     echo "Searching ..."
-    mapfile -t jar_list < <(scan_repo_dir)
+    mapfile -t jar_list < <(scan_repo_dir "$@" )
 else
     jar_list=( "$@" )
 fi

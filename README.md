@@ -104,6 +104,18 @@ Maven plugins and creates a completion extension for each. The script tries
 to identify the highest version of each plugin, but Maven versioning is quite
 complex.
 
+When using `--all` the selection can be restricted by adding parts of the
+file name. E.g.:
+```
+mvn-comp-create-extension.sh --all findbugs surefire
+```
+will only create completion plugins from plugin jars which full path name
+contains the words `findbugs` or `surefire`.
+Or only for the `maven-invoker-plugin`:
+```
+mvn-comp-create-extension.sh --all maven-invoker-plugin
+```
+
 #### Manually creating a Completion Extension
 
 There is no reason to manually create a completion extension script. Anyway,
