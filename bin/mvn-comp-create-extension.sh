@@ -236,7 +236,7 @@ show_help()
     echo "    Creates completion-extensions for all maven-plugins found in the local"
     echo "    repository. By default this is ~/.m2/repository/, but this scritpt asks"
     echo "    Maven for the actual repository."
-    echo "    If one or more name-parts are given, only maven plagins are processed"
+    echo "    If one or more name-parts are given, only maven plugins are processed"
     echo "    that match any of the parts."
     echo
     echo " or"
