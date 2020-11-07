@@ -369,11 +369,11 @@ __mvn_get_profiles()
     [ -n "${mvn_completion_no_parsing:-}" ] && return
     if [ -z "$__mvn_last_pom_profiles" ]; then
         local IFS profs modules
-        mapfile -d$'\n' -t modules < <(__mvn_get_poms_recursive "$1" | sort -u)
-        mapfile -d$'\n' -t parents < <(__mvn_get_parent_poms "$1" | sort -u)
+        mapfile -t modules < <(__mvn_get_poms_recursive "$1" | sort -u)
+        mapfile -t parents < <(__mvn_get_parent_poms "$1" | sort -u)
         #mvc_debug "modules: $modules"
-        mapfile -d$'\n' -t profs < <(__mvn_get_pom_profiles "${modules[@]}" "${parents[@]}" | sort -u)
-        mapfile -d$'\n' -O "${#profs[@]}" -t profs < <(__mvn_get_settings_profiles | sort -u)
+        mapfile -t profs < <(__mvn_get_pom_profiles "${modules[@]}" "${parents[@]}" | sort -u)
+        mapfile -O "${#profs[@]}" -t profs < <(__mvn_get_settings_profiles | sort -u)
         IFS='|' __mvn_last_pom_profiles="${profs[*]}"
     fi
     echo "$__mvn_last_pom_profiles"
@@ -409,12 +409,12 @@ __mvn_plugin_goal()
             suffix=':'
         fi
         if [ -n "$goals" ]; then
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -W "${goals}" -S "$suffix" -- "${cur}")
+            mapfile -t COMPREPLY < <(compgen -W "${goals}" -S "$suffix" -- "${cur}")
         else
             COMPREPLY=( '' )
         fi
     else
-        mapfile -d$'\n' -O "${#COMPREPLY[@]}" -t COMPREPLY < <(compgen -W "${!__mvn_comp_exts[*]}" -S ':' -- "${cur}")
+        mapfile -O "${#COMPREPLY[@]}" -t COMPREPLY < <(compgen -W "${!__mvn_comp_exts[*]}" -S ':' -- "${cur}")
     fi
 }
 
@@ -497,7 +497,7 @@ _mvn()
                 pl_options="${pl_options}$("$plugin_dir/${__mvn_comp_exts[$pl]}" goalopts "$gl")"
             fi
         done
-        mapfile -d$'\n' -t COMPREPLY < <(compgen -S ' ' -W "${options}${pl_options}" -- "${cur}")
+        mapfile -t COMPREPLY < <(compgen -S ' ' -W "${options}${pl_options}" -- "${cur}")
 
     elif [[ ${cur} == -P* ]] ; then
         cur=${cur:2}
@@ -505,42 +505,42 @@ _mvn()
         local profiles=$(__mvn_get_profiles pom.xml)
         __mvn_last_pom_profiles="$profiles"
         if [[ ${cur} == *,* ]] ; then
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -P "-P${cur%,*}," -- "${cur##*,}")
+            mapfile -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -P "-P${cur%,*}," -- "${cur##*,}")
         else
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -P "-P" -- "${cur}")
+            mapfile -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -P "-P" -- "${cur}")
         fi
     elif [[ ${prev} == -P || ${prev} == --activate-profiles ]] ; then
         # shellcheck disable=SC2155
         local profiles=$(__mvn_get_profiles pom.xml)
         __mvn_last_pom_profiles="$profiles"
         if [[ ${cur} == *,* ]] ; then
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -P "${cur%,*}," -- "${cur##*,}")
+            mapfile -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -P "${cur%,*}," -- "${cur##*,}")
         else
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -- "${cur}")
+            mapfile -t COMPREPLY < <(compgen -S ',' -W "${profiles}" -- "${cur}")
         fi
 
     elif [[ ${cur} == --* ]] ; then
-        mapfile -d$'\n' -t COMPREPLY < <(compgen -W "${long_opts}" -S ' ' -- "${cur}")
+        mapfile -t COMPREPLY < <(compgen -W "${long_opts}" -S ' ' -- "${cur}")
 
     elif [[ ${cur} == -* ]] ; then
-        mapfile -d$'\n' -t COMPREPLY < <(compgen -W "${opts}" -S ' ' -- "${cur}")
+        mapfile -t COMPREPLY < <(compgen -W "${opts}" -S ' ' -- "${cur}")
 
     elif [[ ${prev} == -pl ]] ; then
         if [[ ${cur} == *,* ]] ; then
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -d -S ',' -P "${cur%,*}," -- "${cur##*,}")
+            mapfile -t COMPREPLY < <(compgen -d -S ',' -P "${cur%,*}," -- "${cur##*,}")
         else
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -d -S ',' -- "${cur}")
+            mapfile -t COMPREPLY < <(compgen -d -S ',' -- "${cur}")
         fi
 
     elif [[ ${prev} == -rf || ${prev} == --resume-from ]] ; then
-        mapfile -d$'\n' -t COMPREPLY < <(compgen -d -S ' ' -- "${cur}")
+        mapfile -t COMPREPLY < <(compgen -d -S ' ' -- "${cur}")
 
     elif [[ ${cur} == *:* ]] ; then
         __mvn_plugin_goal "${cur}"
 
     else
         if echo "${common_lifecycle_phases}" | tr '|' '\n' | grep -q -e "^${cur}" ; then
-            mapfile -d$'\n' -t COMPREPLY < <(compgen -S ' ' -W "${common_lifecycle_phases}" -- "${cur}")
+            mapfile -t COMPREPLY < <(compgen -S ' ' -W "${common_lifecycle_phases}" -- "${cur}")
         fi
         __mvn_plugin_goal "${cur}"
     fi

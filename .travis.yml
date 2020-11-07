@@ -20,6 +20,7 @@ addons:
     - xsltproc
 
 script:
+  - bash --version
   - sed  -i '/<profiles>/,/<\/profiles>/d' $HOME/.m2/settings.xml
   - cat $HOME/.m2/settings.xml
   # Run the test script

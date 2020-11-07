@@ -122,6 +122,9 @@ get_completions(){
 
     if [ -s "$test_dir/_mvn.out" ]; then
         log_error "_mvn produced output to stdout or stderr"
+        echo "=================="
+        cat "$test_dir/_mvn.out"
+        echo "=================="
     fi
 
     # print completions to stdout
