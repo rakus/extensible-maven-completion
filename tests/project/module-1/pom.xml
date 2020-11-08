@@ -17,10 +17,10 @@
 
     <profiles>
         <profile>
-            <id>test</id>
+            <id>xmp-test</id>
         </profile>
         <profile>
-            <id>delete</id>
+            <id>xmp-delete</id>
         </profile>
     </profiles>
 

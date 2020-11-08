@@ -317,7 +317,7 @@ or
     $ ./test_comp.sh
 
 __IMPORTANT:__ Some test steps will fail, when profiles are defined in
-`$HOME/.m2/settings.xml`. Also a XSLT processor is needed (see section
+`$MAVEN_HOME/conf/settings.xml`. Also a XSLT processor is needed (see section
 [Prepare](#prepare)).
 
 The tests ran successful on

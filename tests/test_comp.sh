@@ -16,6 +16,9 @@ script_dir="$(cd "$(dirname "$0")" && pwd)" || exit 1
 #script_name="$(basename "$0")"
 #script_file="$script_dir/$script_name"
 
+# profiles in the test project
+test_profiles=( "xmp-deep-profile" "xmp-delete" "xmp-test" "xmp-top-profile" )
+
 mvn_completion_script="$script_dir/../_maven-completion.bash"
 # shellcheck disable=SC1090
 source "$mvn_completion_script"
@@ -144,6 +147,17 @@ assert_completion()
 
     assert "$*" "$expected" "$(get_completions "$@")"
 }
+
+#---------[ MAIN ]-------------------------------------------------------------
+
+
+echo "Fetching Maven setting profiles..."
+
+mapfile -t mvn_system_profiles < <(mvn help:all-profiles | grep -v '^\(\[INFO.*\|\[WARNING.*\| *\)$' | cut -d: -f2 | cut -d'(' -f1  | tr -d ' ' | sort )
+echo "    ${mvn_system_profiles[*]:-No profiles found}"
+
+all_profiles_array=( "${test_profiles[@]}" )
+all_profiles_array+=( "${mvn_system_profiles[@]}" )
 
 
 section "Check for XSLT processor"
@@ -381,9 +395,13 @@ check_profile_parsing()
     #mvn_comp_reset
     cd "$script_dir/project" || exit 1
 
+    all_profiles="$(printf '%s|' "${all_profiles_array[@]}" )"
+    all_profiles="${all_profiles%|}"
+
+
     get_completions mvn -P > /dev/null 2>&1
     # shellcheck disable=SC2154  # __mvn_last_pom_profiles is set by completion code
-    assert "Parser $parser: Profile Cache - top" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
+    assert "Parser $parser: Profile Cache - top" "$all_profiles" "$__mvn_last_pom_profiles"
     # shellcheck disable=SC2154  # __mvn_last_pom is set by completion code
     assert "Parser $parser: Last Profile POM - top" "$script_dir/project/pom.xml" "$__mvn_last_pom"
 
@@ -391,7 +409,7 @@ check_profile_parsing()
     cd "$script_dir/project/module-1" || exit 1
     get_completions mvn -P > /dev/null 2>&1
     # shellcheck disable=SC2154  # __mvn_last_pom_profiles is set by completion code
-    assert "Parser $parser: Profile Cache - module-1" "deep-profile|delete|test|top-profile" "$__mvn_last_pom_profiles"
+    assert "Parser $parser: Profile Cache - module-1" "$all_profiles" "$__mvn_last_pom_profiles"
     # shellcheck disable=SC2154  # __mvn_last_pom is set by completion code
     assert "Parser $parser: Last Profile POM - module-1" "$script_dir/project/module-1/pom.xml" "$__mvn_last_pom"
 
@@ -413,20 +431,27 @@ section "Profile completion"
 # shellcheck disable=SC1090
 source "$mvn_completion_script"
 
-assert_completion "top-profile," mvn -P top
-assert_completion "delete," mvn -P del
-assert_completion "deep-profile,,delete,,test,,top-profile," mvn "-P "
-assert_completion "-Pdeep-profile,,-Pdelete,,-Ptest,,-Ptop-profile," mvn "-P"
-assert_completion "-Ptop-profile," mvn -Ptop
-assert_completion "-Ptop-profile,delete," mvn -Ptop-profile,del
-assert_completion "-Ptop-profile,deep-profile,,-Ptop-profile,delete," mvn -Ptop-profile,de
-assert_completion "top-profile," mvn --activate-profiles top
-assert_completion "top-profile,deep-profile,,top-profile,delete," mvn --activate-profiles top-profile,de
-assert_completion "top-profile,delete," mvn --activate-profiles top-profile,del
+
+mapfile -t expected_profiles_array < <(printf '%s\n' "${all_profiles_array[@]}" | sort -u )
+expected_profiles="$(printf '%s,,' "${expected_profiles_array[@]}")"
+expected_profiles="${expected_profiles%,}"
+p_expected_profiles="$(printf -- '-P%s,,' "${expected_profiles_array[@]}")"
+p_expected_profiles="${p_expected_profiles%,}"
+
+assert_completion "xmp-top-profile," mvn -P xmp-top
+assert_completion "xmp-delete," mvn -P xmp-del
+assert_completion "$expected_profiles" mvn "-P "
+assert_completion "${p_expected_profiles}" mvn "-P"
+assert_completion "-Pxmp-top-profile," mvn -Pxmp-top
+assert_completion "-Pxmp-top-profile,xmp-delete," mvn -Pxmp-top-profile,xmp-del
+assert_completion "-Pxmp-top-profile,xmp-deep-profile,,-Pxmp-top-profile,xmp-delete," mvn -Pxmp-top-profile,xmp-de
+assert_completion "xmp-top-profile," mvn --activate-profiles xmp-top
+assert_completion "xmp-top-profile,xmp-deep-profile,,xmp-top-profile,xmp-delete," mvn --activate-profiles xmp-top-profile,xmp-de
+assert_completion "xmp-top-profile,xmp-delete," mvn --activate-profiles xmp-top-profile,xmp-del
 
 echo "-----"
 echo "Tests: $test_count  Failed: $error_count"
-
+echo ""
 
 [ $error_count -ne 0 ] && exit 1
 exit 0

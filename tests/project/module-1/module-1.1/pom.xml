@@ -17,7 +17,7 @@
 
     <profiles>
         <profile>
-            <id>deep-profile</id>
+            <id>xmp-deep-profile</id>
         </profile>
     </profiles>
 
