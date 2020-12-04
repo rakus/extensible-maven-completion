@@ -23,6 +23,7 @@ script:
   - bash --version
   - sed  -i '/<profiles>/,/<\/profiles>/d' $HOME/.m2/settings.xml
   - cat $HOME/.m2/settings.xml
+  - mvn help:all-profiles
   # Run the test script
   - make all
 

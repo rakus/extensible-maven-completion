@@ -33,6 +33,7 @@ build_script:
   - java -version
   - mvn --version
   - bash.exe --version
+  - mvn help:all-profiles
 test_script:
   - bash.exe -c tests/test_comp.sh
 cache:

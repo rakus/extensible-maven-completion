@@ -153,7 +153,7 @@ assert_completion()
 
 echo "Fetching Maven setting profiles..."
 
-mapfile -t mvn_system_profiles < <(mvn help:all-profiles | grep -v '^\(\[INFO.*\|\[WARNING.*\| *\)$' | cut -d: -f2 | cut -d'(' -f1  | tr -d ' ' | sort )
+mapfile -t mvn_system_profiles < <(mvn help:all-profiles | grep '^ *Profile' | cut -d: -f2 | cut -d'(' -f1  | tr -d ' ' | sort )
 echo "    ${mvn_system_profiles[*]:-No profiles found}"
 
 all_profiles_array=( "${test_profiles[@]}" )
