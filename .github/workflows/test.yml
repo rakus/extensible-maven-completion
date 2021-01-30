@@ -1,0 +1,82 @@
+name: Test
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches:
+      - master
+      - gh-actions
+  pull_request:
+    branches:
+      - master
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  test-linux:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Install required packages (e.g. shellcheck)
+        run: sudo apt-get install -qq libxml-xpath-perl xsltproc shellcheck
+
+      - name: Check bash version
+        run: bash --version
+
+      - name: Cleanup Maven Profiles
+        run: |
+          sed  -i '/<profiles>/,/<\/profiles>/d' $HOME/.m2/settings.xml || true
+          cat $HOME/.m2/settings.xml || true
+          mvn -B help:all-profiles
+
+      - name: Run tests and shellcheck
+        run: make tests check
+
+
+  test-windows:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Install msxsl
+        shell: pwsh
+        run: |
+          if (!(Test-Path -Path "C:\msxsl" )) {
+            New-Item -ItemType directory -Path C:\msxsl
+            (New-Object Net.WebClient).DownloadFile('http://download.microsoft.com/download/f/2/6/f263ac46-1fe9-4ae9-8fd3-21102100ebf5/msxsl.exe', "c:\msxsl\msxsl.exe")
+          }
+
+      - name: Install msxsl
+        shell: pwsh
+        run: |
+          if (!(Test-Path -Path "C:\shellcheck" )) {
+            (New-Object Net.WebClient).DownloadFile('https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.zip', "c:\shellcheck-stable.zip")
+            [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\shellcheck-stable.zip", "C:\shellcheck")
+            Rename-Item -Path "C:\shellcheck\shellcheck-stable.exe" -NewName "shellcheck.exe"
+          }
+
+      - name: Print Tool Versions
+        shell: bash
+        run: |
+          java -version
+          mvn --version
+          bash --version
+          mvn help:all-profiles
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          export PATH="$PATH:/c/msxsl:/c/shellcheck"
+          tests/test_comp.sh
+
