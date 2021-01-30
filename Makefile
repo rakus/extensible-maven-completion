@@ -24,7 +24,9 @@ tests:   ## run tests
 	tests/test_comp.sh "$(VERSION)"
 
 check:  ## run shellcheck
-	shellcheck -sbash -fgcc _maven-completion.bash bin/*.sh tests/test_comp.sh
+	# Ignore warning about unknown directives (SC1107) produced by
+	# older versions of sheckstyle
+	shellcheck -sbash -fgcc -e SC1107 _maven-completion.bash bin/*.sh tests/test_comp.sh
 
 version_check:  ## Check that version is set correctly
 	./version_check.sh "$(VERSION)"
