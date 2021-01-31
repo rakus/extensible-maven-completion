@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - master
-      - gh-actions
   pull_request:
     branches:
       - master
@@ -17,23 +16,28 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   test-linux:
-    # The type of runner that the job will run on
+
     runs-on: ubuntu-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out your repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v2
 
-      - name: Install required packages (e.g. shellcheck)
+      - name: Install Required Packages
         run: sudo apt-get install -qq libxml-xpath-perl xsltproc shellcheck
 
-      - name: Check bash version
-        run: bash --version
+      - name: Print Tool Versions
+        run: |
+          java -version
+          mvn --version
+          bash --version
 
       - name: Cleanup Maven Profiles
         run: |
-          sed  -i '/<profiles>/,/<\/profiles>/d' $HOME/.m2/settings.xml || true
-          cat $HOME/.m2/settings.xml || true
+          if [ -e "$HOME/.m2/settings.xml" ]; then
+            sed  -i '/<profiles>/,/<\/profiles>/d' "$HOME/.m2/settings.xml"
+            cat $HOME/.m2/settings.xml
+          fi
           mvn -B help:all-profiles
 
       - name: Run tests and shellcheck
@@ -41,12 +45,11 @@ jobs:
 
 
   test-windows:
-    # The type of runner that the job will run on
+
     runs-on: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out your repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v2
 
       - name: Install msxsl
@@ -57,7 +60,7 @@ jobs:
             (New-Object Net.WebClient).DownloadFile('http://download.microsoft.com/download/f/2/6/f263ac46-1fe9-4ae9-8fd3-21102100ebf5/msxsl.exe', "c:\msxsl\msxsl.exe")
           }
 
-      - name: Install msxsl
+      - name: Install shellcheck
         shell: pwsh
         run: |
           if (!(Test-Path -Path "C:\shellcheck" )) {
@@ -72,7 +75,15 @@ jobs:
           java -version
           mvn --version
           bash --version
-          mvn help:all-profiles
+
+      - name: Cleanup Maven Profiles
+        shell: bash
+        run: |
+          if [ -e "$HOME/.m2/settings.xml" ]; then
+            sed  -i '/<profiles>/,/<\/profiles>/d' "$HOME/.m2/settings.xml"
+            cat $HOME/.m2/settings.xml
+          fi
+          mvn -B help:all-profiles
 
       - name: Run Tests
         shell: bash
