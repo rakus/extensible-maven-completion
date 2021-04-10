@@ -52,14 +52,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v2
 
-      - name: Install msxsl
-        shell: pwsh
-        run: |
-          if (!(Test-Path -Path "C:\msxsl" )) {
-            New-Item -ItemType directory -Path C:\msxsl
-            (New-Object Net.WebClient).DownloadFile('http://download.microsoft.com/download/f/2/6/f263ac46-1fe9-4ae9-8fd3-21102100ebf5/msxsl.exe', "c:\msxsl\msxsl.exe")
-          }
-
       - name: Install shellcheck
         shell: pwsh
         run: |
@@ -75,6 +67,7 @@ jobs:
           java -version
           mvn --version
           bash --version
+          xsltproc --version
 
       - name: Cleanup Maven Profiles
         shell: bash
@@ -88,6 +81,6 @@ jobs:
       - name: Run Tests
         shell: bash
         run: |
-          export PATH="$PATH:/c/msxsl:/c/shellcheck"
+          export PATH="$PATH:/c/shellcheck"
           tests/test_comp.sh
 

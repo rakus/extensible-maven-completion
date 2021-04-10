@@ -44,7 +44,7 @@ init_xslt_proc()
 {
     if [ "$OSTYPE" = "msys" ]; then
 
-        if ! command -v xsltproc >/dev/null 2>&1 || ! xsltproc </dev/null >/dev/null 2>&1; then
+        if ! command -v xsltproc >/dev/null 2>&1 || ! xsltproc --version >/dev/null 2>&1; then
             if command -v msxsl.exe >/dev/null 2>&1; then
                 xslt_cmd=( msxsl - "$script_dir/$xsl_file" )
             else
