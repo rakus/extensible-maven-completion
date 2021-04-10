@@ -94,13 +94,13 @@ version=0.1.0
                     <xsl:if test="@implementation = 'boolean' or @implementation = 'java.lang.Boolean'">
                         <xsl:choose>
                             <xsl:when test="@default-value = 'true'">
-                                <xsl:text>false</xsl:text>
+                                <xsl:text>false </xsl:text>
                             </xsl:when>
                             <xsl:when test="@default-value = 'false'">
-                                <xsl:text>true</xsl:text>
+                                <xsl:text>true </xsl:text>
                             </xsl:when>
                             <xsl:otherwise>
-                                <xsl:text>true</xsl:text>
+                                <xsl:text>true </xsl:text>
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:if>

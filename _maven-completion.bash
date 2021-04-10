@@ -465,7 +465,7 @@ _mvn()
     local common_site_lifecycle="pre-site|site|post-site|site-deploy"
     local common_lifecycle_phases="${common_clean_lifecycle}|${common_default_lifecycle}|${common_site_lifecycle}"
 
-    local options="-Dmaven.test.skip=true|-DskipTests|-DskipITs|-Dmaven.surefire.debug|-DenableCiProfile|-Dpmd.skip=true|-Dcheckstyle.skip=true|-Dtycho.mode=maven|-Dmaven.javadoc.skip=true|-Dgwt.compiler.skip|-Drestart|-Dtest.project.only|-DfullDeployment=true"
+    local options="-Dmaven.test.skip=true |-DskipTests |-DskipITs |-Dmaven.surefire.debug |-DenableCiProfile |-Dpmd.skip=true |-Dcheckstyle.skip=true |-Dtycho.mode=maven |-Dmaven.javadoc.skip=true |-Dgwt.compiler.skip |-Drestart |-Dtest.project.only |-DfullDeployment=true "
 
     #local profile_settings=$(__mvn_get_settings_profiles | tr '\n' '|' )
 
@@ -497,7 +497,8 @@ _mvn()
                 pl_options="${pl_options}$("$plugin_dir/${__mvn_comp_exts[$pl]}" goalopts "$gl")"
             fi
         done
-        mapfile -t COMPREPLY < <(compgen -S ' ' -W "${options}${pl_options}" -- "${cur}")
+        pl_options="${options}${pl_options}"
+        mapfile -t COMPREPLY < <(compgen -W "${pl_options%|}" -- "${cur}")
 
     elif [[ ${cur} == -P* ]] ; then
         cur=${cur:2}

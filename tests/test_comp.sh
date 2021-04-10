@@ -346,6 +346,10 @@ assert_completion "deploy " mvn depl
 export mvn_completion_ext_dir="$test_dir/maven-completion.d"
 mvn_comp_reset
 
+section "Property Definition Completion"
+
+assert_completion "-Dgoal="  mvn deploy:help -Dgoal
+assert_completion "-Ddetail=true " mvn deploy:help -Ddet
 
 section "Switch Completion"
 

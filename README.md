@@ -136,9 +136,9 @@ names.
 
 `some-name.mc-ext goalopts <goal>`: This prints the property definition command
 line options for the goal including the leading `-D`. The options are pipe
-(`|`) separated and need a _leading pipe_.  If the goal doesn't support any
+(`|`) separated and need a _leading pipe_. If the goal doesn't support any
 property an empty string is printed (`echo ""`). Boolean properties should be
-printed with their non-default value.
+printed with their non-default value and a trailing space.
 
 For any other invocation a help text should be printed to STDERR and the script
 exits with a non-zero exit code. It __must not__ print anything to STDOUT in
@@ -165,9 +165,9 @@ goals()
 goal_options()
 {
     if [ "$1" = "help" ]; then
-        echo "|-Ddetail=true|-Dgoal=|-DindentSize=|-DlineLength="
+        echo "|-Ddetail=true |-Dgoal=|-DindentSize=|-DlineLength="
     elif [ "$1" = "shade" ]; then
-        echo "|-DshadeSourcesContent=true"
+        echo "|-DshadeSourcesContent=true "
     fi
 }
 
@@ -235,13 +235,13 @@ selection:
 * `xpath`: Skip xslt processors and start selection with `xpath`.
 * `grep`: Use `grep`.
 
-If no xsl processor is available, consider setting `mvn_completion_parser` to
+If no xslt processor is available, consider setting `mvn_completion_parser` to
 `grep` as `xpath` is just slow. Or disable parsing by setting
 `mvn_completion_no_parsing`.
 
 #### Configuration
 
-Then profile parsing can be configured with two options.
+The profile parsing can be configured with two options.
 
 __mvn_completion_no_parsing__
 
