@@ -2,7 +2,6 @@
 # Extensible MAVEN Completion for Bash
 
 [![Test](https://github.com/rakus/extensible-maven-completion/workflows/Test/badge.svg)](https://github.com/rakus/extensible-maven-completion/actions?query=workflow%3ATest)
-[![Build status](https://ci.appveyor.com/api/projects/status/w55eoac2r5ywjcbf/branch/master?svg=true)](https://ci.appveyor.com/project/rakus/extensible-maven-completion/branch/master)
 
 This project provides a bash completion script for the Apache Maven build tool.
 
@@ -319,13 +318,6 @@ or
 __IMPORTANT:__ Some test steps will fail, when profiles are defined in
 `$MAVEN_HOME/conf/settings.xml`. Also a XSLT processor is needed (see section
 [Prepare](#prepare)).
-
-The tests ran successful on
-
-* Fedora 31
-* Windows 7 with "Git Bash"
-* Ubuntu 16.04 (Travis CI)
-* Windows Server 2012 with "Git Bash" (Appveyor CI)
 
 ## Supporting Tools
 
