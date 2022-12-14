@@ -253,36 +253,20 @@ show_version()
 
 init_xslt_proc
 
-while getopts ":-:" o "$@"; do
-    case $o in
-        -)
-            case $OPTARG in
-                all)
-                    search_the_repo=true
-                    ;;
-                help)
-                    show_help
-                    exit 0
-                    ;;
-                version)
-                    show_version
-                    exit 0
-                    ;;
-                *)
-                    echo >&2 "ERROR: Unknown option: --$OPTARG"
-                    show_help
-                    exit 1
-                    ;;
-            esac
-            ;;
-        *)
-            echo >&2 "ERROR: Unknown option: -$OPTARG"
-            show_help
-            exit 1
-            ;;
+if ! _args="$(unset POSIXLY_CORRECT GETOPT_COMPATIBLE; getopt -n "$script_name" -o "" --long "all,help,version" -- "$@")"; then
+    exit 1
+fi
+eval set -- "$_args"
+while true; do
+    case $1 in
+        --all) search_the_repo=true ;;
+        --help) show_help; exit 0 ;;
+        --version) show_version; exit 0 ;;
+        --) shift; break ;;
+        *) break ;;
     esac
+    shift
 done
-shift $((OPTIND-1))
 
 if [ "${search_the_repo:-}" != true ] && [ "$#" -eq 0 ]; then
     show_help
