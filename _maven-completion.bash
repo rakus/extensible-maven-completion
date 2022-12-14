@@ -92,7 +92,7 @@ _mvn_function_exists __ltrim_colon_completions ||
     {
         if [[ "$1" == *:* && "$COMP_WORDBREAKS" == *:* ]]; then
             # Remove colon-word prefix from COMPREPLY items
-            local colon_word=${1%${1##*:}}
+            local colon_word=${1%"${1##*:}"}
             local i=${#COMPREPLY[*]}
             while [[ $((--i)) -ge 0 ]]; do
                 COMPREPLY[$i]=${COMPREPLY[$i]#"$colon_word"}
@@ -436,7 +436,7 @@ __mvn_init()
                 done 2>/dev/null
             done
         fi
-        # shellcheck disable=SC1090
+        # shellcheck disable=SC1090,SC1091
         . "$plugin_dir/mc-ext.cache"
     fi
     __mvn_inited="true"

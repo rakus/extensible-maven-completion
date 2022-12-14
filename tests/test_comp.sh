@@ -109,6 +109,7 @@ get_completions(){
     COMP_LINE=$*
     COMP_POINT=${#COMP_LINE}
 
+    # shellcheck disable=SC2294 # needed here to remove some escaping
     eval set -- "$@"
 
     COMP_WORDS=("$@")
@@ -457,7 +458,7 @@ echo "-----"
 echo "Tests: $test_count  Failed: $error_count"
 echo ""
 
-[ $error_count -ne 0 ] && exit 1
+[ "$error_count" -ne 0 ] && exit 1
 exit 0
 
 
