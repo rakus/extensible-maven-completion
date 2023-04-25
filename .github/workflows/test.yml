@@ -24,7 +24,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Required Packages
         run: sudo apt-get install -qq libxml-xpath-perl xsltproc shellcheck
@@ -34,6 +34,8 @@ jobs:
           java -version
           mvn --version
           bash --version
+          xsltproc --version
+          yq --version
 
       - name: Cleanup Maven Profiles
         run: |
@@ -53,16 +55,12 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Install shellcheck
-        shell: pwsh
-        run: |
-          if (!(Test-Path -Path "C:\shellcheck" )) {
-            (New-Object Net.WebClient).DownloadFile('https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.zip', "c:\shellcheck-stable.zip")
-            [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\shellcheck-stable.zip", "C:\shellcheck")
-            #Rename-Item -Path "C:\shellcheck\shellcheck-stable.exe" -NewName "shellcheck.exe"
-          }
+      - name: Choco install yq
+        uses: crazy-max/ghaction-chocolatey@v2
+        with:
+          args: install yq shellcheck
 
       - name: Print Tool Versions
         shell: bash
@@ -71,6 +69,7 @@ jobs:
           mvn --version
           bash --version
           xsltproc --version
+          yq --version
 
       - name: Cleanup Maven Profiles
         shell: bash
@@ -84,6 +83,5 @@ jobs:
       - name: Run Tests
         shell: bash
         run: |
-          export PATH="$PATH:/c/shellcheck"
           tests/test_comp.sh
 
