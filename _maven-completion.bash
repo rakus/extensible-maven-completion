@@ -11,11 +11,17 @@
 
 _mvn_has_xsltproc="$(type -P xsltproc 2>/dev/null)"
 _mvn_has_xpath="$(type -P xpath 2>/dev/null)"
+_mvn_has_yq="$(type -P yq 2>/dev/null)"
 _mvn_has_msxsl="$(type -P msxsl.exe 2>/dev/null)"
 
 # on Git For Windows xsltproc is available, but might not work
 if ! xsltproc --version >/dev/null 2>&1; then
     _mvn_has_xsltproc=''
+fi
+
+# We need yq v4.*
+if ! yq --version | grep -e 'v[456789]\.' >/dev/null 2>&1; then
+    _mvn_has_yq=''
 fi
 
 # disable xpath for msys (e.g. Git Bash on Windows)
@@ -29,13 +35,19 @@ case ${mvn_completion_parser:-UNSET} in
     msxsl)
         _mvn_has_xsltproc=''
         ;;
+    yq)
+        _mvn_has_xsltproc=''
+        _mvn_has_msxsl=''
+        ;;
     xpath)
         _mvn_has_xsltproc=''
         _mvn_has_msxsl=''
+        _mvn_has_yq=''
         ;;
     grep)
         _mvn_has_xsltproc=''
         _mvn_has_msxsl=''
+        _mvn_has_yq=''
         _mvn_has_xpath=''
         ;;
     UNSET) : ;;
@@ -104,7 +116,7 @@ _mvn_function_exists __ltrim_colon_completions ||
 unset -f _mvn_function_exists
 
 #---------[ POM parsing functions ]--------------------------------------------
-# Either using xpath or xslt or (as fallback) grep etc
+# Either using xslt (xsltproc or msxsl) or yq or (as fallback) grep etc
 if [ -n "${_mvn_has_xsltproc}" ]; then
 
     __mvn_get_module_poms()
@@ -260,6 +272,33 @@ __mvn_get_settings_profiles()
 EOF
 }
 
+elif [ -n "$_mvn_has_yq" ]; then
+    __mvn_get_module_poms()
+    {
+        yq -px -oy '.. | select(has("modules")) | .modules.module |= (select(tag == "!!seq") // [.]) | .modules.module[]' "$1" | grep -v '^\(---\|null\)$' | sed 's/$/\/pom.xml/'
+    }
+    __mvn_get_pom_profiles()
+    {
+        yq -px -oy '.project.profiles.profile |= (select(tag == "!!seq") // [.]) | .project.profiles.profile[] | .id' "$@" | grep -v '^\(---\|null\)$'
+    }
+    __mvn_get_parent_pom_path()
+    {
+        local parent
+        if [ "$(yq -px -oy '.project.parent' "$1")" != "null" ]; then
+            parent="$(yq -px -oy '.project.parent.relativePath' "$1")"
+            [ "$parent" = "null" ] && parent='../pom.xml'
+            echo "$parent"
+        else
+            return 0
+        fi
+    }
+    __mvn_get_settings_profiles()
+    {
+        if [ -e "$HOME/.m2/settings.xml" ]; then
+            yq -px -oy '.settings.profiles.profile |= (select(tag == "!!seq") // [.]) | .settings.profiles.profile[] | .id' "$HOME/.m2/settings.xml" | grep -v '^\(---\|null\)$'
+        fi
+    }
+
 elif [ -n "$_mvn_has_xpath" ]; then
 
     __mvn_get_module_poms()
@@ -267,31 +306,32 @@ elif [ -n "$_mvn_has_xpath" ]; then
         xpath -q -e '//modules/module/text()' "$1" | sed 's/$/\/pom.xml/'
     }
 
-__mvn_get_pom_profiles()
-{
-    xpath -q -e '/project/profiles/profile/id/text()' "$@"
-}
+    __mvn_get_pom_profiles()
+    {
+        xpath -q -e '/project/profiles/profile/id/text()' "$@"
+    }
 
-__mvn_get_parent_pom_path()
-{
-    local parent
-    if [ -n "$(xpath -q -e '/project/parent' "$1" 2>/dev/null)" ]; then
-        parent=$(xpath -q -e '/project/parent/relativePath/text()' "$1")
-        [ -z "$parent" ] && parent='../pom.xml'
-        echo "$parent"
-    else
-        return 0
-    fi
-}
-__mvn_get_settings_profiles()
-{
-    [ -e "$HOME/.m2/settings.xml" ] && xpath -q -e '/settings/profiles/profile/id/text()' "$HOME/.m2/settings.xml"
-}
+    __mvn_get_parent_pom_path()
+    {
+        local parent
+        if [ -n "$(xpath -q -e '/project/parent' "$1" 2>/dev/null)" ]; then
+            parent=$(xpath -q -e '/project/parent/relativePath/text()' "$1")
+            [ -z "$parent" ] && parent='../pom.xml'
+            echo "$parent"
+        else
+            return 0
+        fi
+    }
+    __mvn_get_settings_profiles()
+    {
+        [ -e "$HOME/.m2/settings.xml" ] && xpath -q -e '/settings/profiles/profile/id/text()' "$HOME/.m2/settings.xml"
+    }
 
 else
     #
     # Fallback using grep and friends. This is "best effort".
     # It requires that every tag is on its own line.
+    # And it doesn't know XML comments!
     #
     __mvn_clean_pom()
     {
@@ -299,36 +339,37 @@ else
         sed 's/<!--.*-->//g;/<!--/,/-->/d' "$@"
     }
 
-__mvn_get_module_poms()
-{
-    __mvn_clean_pom "$1" | grep "<module>" | sed 's/<[^>]*>//g;s/$/\/pom.xml/' | tr -d ' \t'
-}
+    __mvn_get_module_poms()
+    {
+        __mvn_clean_pom "$1" | grep "<module>" | sed 's/<[^>]*>//g;s/$/\/pom.xml/' | tr -d ' \t'
+    }
 
-__mvn_get_pom_profiles()
-{
-    __mvn_clean_pom "$@" | grep -A2 '<profile>' | grep '<id>' | sed 's/<[^>]*>//g' | tr -d ' \t'
-}
+    __mvn_get_pom_profiles()
+    {
+        __mvn_clean_pom "$@" | grep -A2 '<profile>' | grep '<id>' | sed 's/<[^>]*>//g' | tr -d ' \t'
+    }
 
-__mvn_get_parent_pom_path()
-{
-    local parent pom
-    parent="$(__mvn_clean_pom "$1" | sed -n '/<parent>/,/<\/parent>/p')"
-    if [ -n "$parent" ]; then
-        pom="$(echo "$parent" | grep "<relativePath>" | sed 's/<[^>]*>//g' | tr -d ' \t')"
-        [ -z "$pom" ] && pom='../pom.xml'
-        echo "$pom"
-    else
-        return 0
-    fi
-}
-__mvn_get_settings_profiles()
-{
-    [ -e  "$HOME/.m2/settings.xml" ] && __mvn_get_pom_profiles "$HOME/.m2/settings.xml"
-}
+    __mvn_get_parent_pom_path()
+    {
+        local parent pom
+        parent="$(__mvn_clean_pom "$1" | sed -n '/<parent>/,/<\/parent>/p')"
+        if [ -n "$parent" ]; then
+            pom="$(echo "$parent" | grep "<relativePath>" | sed 's/<[^>]*>//g' | tr -d ' \t')"
+            [ -z "$pom" ] && pom='../pom.xml'
+            echo "$pom"
+        else
+            return 0
+        fi
+    }
+    __mvn_get_settings_profiles()
+    {
+        [ -e  "$HOME/.m2/settings.xml" ] && __mvn_get_pom_profiles "$HOME/.m2/settings.xml"
+    }
 
 fi
 
 unset _mvn_has_xpath
+unset _mvn_has_yq
 unset _mvn_has_xsltproc
 unset _mvn_has_msxsl
 
@@ -469,6 +510,7 @@ _mvn()
 
     #local profile_settings=$(__mvn_get_settings_profiles | tr '\n' '|' )
 
+    local fqPom
     fqPom=$(readlink -f pom.xml)
     if [ ! -e "$fqPom" ]; then
         # reset cache

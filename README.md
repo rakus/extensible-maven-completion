@@ -202,7 +202,7 @@ The result of parsing the POMs is cached in a environment variable. If the
 maven completion is invoked for a different POM, the cached profiles are
 discarded and the POM(s) are parsed again.
 
-Parsing is done either with `xsltproc`, `xpath` or `grep` (and friends).
+Parsing is done either with `xsltproc`, `yq`, `xpath` or `grep` (and friends).
 
 Performance of parsing with `grep` or `xsltproc` is nearly the same, but `grep`
 is less precise. For example it doesn't know XML comments, so it might return
@@ -210,8 +210,7 @@ profile names that are actually commented out. Also it requires proper
 formatted POMs with only one tag per line.
 
 The script also checks for `msxsl.exe` and uses it if `xsltproc` is not
-available or not working. Performance with this tool could not be assessed
-(virus scanner on test machine).
+available or not working.
 
 The performance of `xpath` (from the Perl package) is much slower (factor 10 or
 more).  Support for `xpath` might be removed in the future.
@@ -222,8 +221,9 @@ The parser is selected in the following order:
 
 1. `xsltproc`
 2. `msxsl` (on Windows, maybe needs to be downloaded from Microsoft)
-3. `xpath` (Perl)
-4. `grep` (and other text tools)
+3. `yq` (min v4)
+4. `xpath` (Perl)
+5. `grep` (and other text tools)
 
 Whatever is found first is used.
 
@@ -231,12 +231,13 @@ The environment variable `mvn_completion_parser` can be used to influence the
 selection:
 
 * `msxsl`: Skip `xsltproc` and start selection with `msxsl`.
-* `xpath`: Skip xslt processors and start selection with `xpath`.
+* `yq`: Skip xslt processors and start selection with `yq`.
+* `xpath`: Skip xslt processors and `yq` and start selection with `xpath`.
 * `grep`: Use `grep`.
 
-If no xslt processor is available, consider setting `mvn_completion_parser` to
-`grep` as `xpath` is just slow. Or disable parsing by setting
-`mvn_completion_no_parsing`.
+If neither a xslt processor and `yq` is available, consider setting
+`mvn_completion_parser` to `grep` as `xpath` is just slow. Or disable parsing
+by setting `mvn_completion_no_parsing`.
 
 #### Configuration
 
@@ -246,8 +247,7 @@ __mvn_completion_no_parsing__
 
 If the environment variable `mvn_completion_no_parsing` is set to any non-empty
 value, parsing the POMs is disabled all together. This is useful on machines
-with slow file IO (maybe due to a virus scanner monitoring all file operations)
-or very large code bases.
+with slow file IO or very large code bases.
 
 __mvn_completion_parser__
 
@@ -323,6 +323,8 @@ __IMPORTANT:__ Some test steps will fail, when profiles are defined in
 
 * `xsltproc` - a XSLT processor (package `xsltproc` on Debian, `libxslt` on
   RedHat)
+* `yq` -  "a lightweight and portable command-line YAML, JSON and XML processor"
+  Available at [Github](https://github.com/mikefarah/yq).
 * `xpath` - a simple XPath processor (package `libxml-xpath-perl` on Debian,
   `perl-XML-XPath` on RedHat)
 * `msxsl` - a XSLT processor for Windows. AFAIK not installed by default. Get

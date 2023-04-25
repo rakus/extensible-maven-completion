@@ -25,6 +25,9 @@ source "$mvn_completion_script"
 
 cd "$script_dir" || exit 1
 
+# File descriptor 3 used for logging
+exec 3>&1
+
 version=""
 if [ -n "${1:-}" ]; then
     version="$1"
@@ -55,7 +58,7 @@ export test_m2="$test_dir/m2"
 mkdir -p "$test_m2"
 
 if ! declare -F _mvn &>/dev/null; then
-    echo >&2 "ERROR: Maven completion not loaded"
+    log >&2 "ERROR: Maven completion not loaded"
     exit 1
 fi
 
@@ -69,19 +72,25 @@ fi
 
 section()
 {
-    echo ""
-    echo "$*"
+    {
+        echo ""
+        echo "$*"
+    } >&3
 }
 log_ok()
 {
-    echo "$OK:    $*"
+    echo >&3 "$OK:    $*"
     ((test_count = test_count + 1))
 }
 log_error()
 {
-    echo "$ERROR: $*"
+    echo >&3 "$ERROR: $*"
     ((test_count = test_count + 1))
     ((error_count = error_count + 1))
+}
+log()
+{
+    echo "$*" >&3
 }
 
 # Log ok or error depending on comparison of expected and actual result.
@@ -126,9 +135,9 @@ get_completions(){
 
     if [ -s "$test_dir/_mvn.out" ]; then
         log_error "_mvn produced output to stdout or stderr"
-        echo "=================="
-        cat "$test_dir/_mvn.out"
-        echo "=================="
+        log "=================="
+        cat "$test_dir/_mvn.out" >&3
+        log "=================="
     fi
 
     # print completions to stdout
@@ -222,7 +231,7 @@ create_comp_ext()
     local comp_ext="$mvn_completion_ext_dir/$grp.$artifact.mc-ext"
 
     if [ ! -e "$mvn_plugin" ]; then
-        echo "Downloading $grp:$artifact:$version"
+        log "Downloading $grp:$artifact:$version"
         mvn dependency:copy -DoutputDirectory="$test_m2" \
             -Dartifact="$grp:$artifact:$version" \
             -Dtransitive=false >/dev/null
@@ -276,7 +285,7 @@ create_comp_ext()
     local shellcheck
     if ! shellcheck="$(shellcheck -fgcc "$comp_ext")"; then
         log_error "$prefix: Shellcheck Completion Extension reports findings:"
-        echo "$shellcheck"
+        log "$shellcheck"
     else
         log_ok "$prefix: Shellcheck Completion Extension"
     fi
@@ -392,6 +401,7 @@ check_profile_parsing()
         *xsltproc*) parser="xsltproc" ;;
         *msxsl*) parser="msxsl" ;;
         *xpath*) parser="xpath" ;;
+        *yq*) parser="yq" ;;
         *grep*) parser="grep" ;;
         *) parser=UNKNOWN ;;
     esac
@@ -428,6 +438,7 @@ check_profile_parsing()
 
 check_profile_parsing
 check_profile_parsing msxsl
+check_profile_parsing yq
 check_profile_parsing xpath
 check_profile_parsing grep
 
@@ -454,9 +465,9 @@ assert_completion "xmp-top-profile," mvn --activate-profiles xmp-top
 assert_completion "xmp-top-profile,xmp-deep-profile,,xmp-top-profile,xmp-delete," mvn --activate-profiles xmp-top-profile,xmp-de
 assert_completion "xmp-top-profile,xmp-delete," mvn --activate-profiles xmp-top-profile,xmp-del
 
-echo "-----"
-echo "Tests: $test_count  Failed: $error_count"
-echo ""
+log "-----"
+log "Tests: $test_count  Failed: $error_count"
+log ""
 
 [ "$error_count" -ne 0 ] && exit 1
 exit 0
