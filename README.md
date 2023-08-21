@@ -288,17 +288,27 @@ extensions for Maven plugins.
 
 ### Execute
 
+**Classic**
 1. Copy the file `_maven-completion.bash` to `$HOME/.maven-completion.bash`
 2. Add the following line to your `.bashrc`:
    ```
    [ -f "$HOME/.maven-completion.bash" ] && . "$HOME/.maven-completion.bash"
    ```
-3. Run the command `bin/mvn-comp-create-extension.sh --all` (see below)
-4. Start a new shell (or source `.maven-completion.bash`)
 
-In step 3 the command `bin/mvn-comp-create-extension.sh --all` scans the local
-repository for Maven plugins will generate a completion extension for each. The
-completion extension are stored in the directory `$HOME/.mvn-completion.d`.
+**Bash Completion on Demand**
+
+Copy the file `_maven-completion.bash` to `$HOME/.local/share/bash-completion/completions/mvn`
+
+This way the completion is only loaded if completion for the command `mvn` is needed. Due to
+that the Bash starts up faster.
+
+**Create Completion Extensions**
+
+Run the command `bin/mvn-comp-create-extension.sh --all`.
+
+This command scans the local repository for Maven plugins and will generate a
+completion extension for each. The completion extension are stored in the
+directory `$HOME/.mvn-completion.d`.
 
 The script might issue error messages for plugins without goals (yes, this is
 possible). Just ignore them.

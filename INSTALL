@@ -14,7 +14,7 @@ cd "$script_dir" || exit 1
 
 ts=$(date "+%Y-%m-%dT%H.%M.%S")
 bin_target_dir="$HOME/bin"
-rc_target_dir="$HOME"
+completion_target_dir="$HOME/.local/share/bash-completion/completions"
 
 execute()
 {
@@ -52,7 +52,6 @@ do_install()
                 echo >&2 "       Use either '-b' or '-f'."
                 echo >&2 ""
                 usage
-                exit 1
                 ;;
         esac
     fi
@@ -68,22 +67,11 @@ do_install()
 
 
 
-install_rcfile()
-{
-    typeset fn="$1"
-    typeset tgt_dir="$2"
-    typeset bn="${fn#_}"
-    typeset fqfn="$(realpath "$fn")"
-    typeset tgt="$tgt_dir/.$bn"
-
-    do_install "$fqfn" "$tgt"
-
-}
-
 install_file()
 {
     typeset fn="$1"
     typeset tgt_dir="$2"
+    # shellcheck disable=SC2155
     typeset fqfn="$(realpath "$fn")"
     typeset tgt="$tgt_dir/$fn"
 
@@ -121,7 +109,6 @@ shift $((OPTIND-1))
 if [ $# -ne 1 ]; then
     echo >&2 "ERROR: one argument needed"
     usage
-    exit 1
 fi
 
 case "$1" in
@@ -134,28 +121,17 @@ case "$1" in
         ;;
 esac
 
+do_install "$script_dir/_maven-completion.bash" "$completion_target_dir/mvn"
 
 if [ ! -d "$bin_target_dir" ]; then
     execute mkdir -p "$bin_target_dir"
 fi
 
-for fn in _*[!~]; do
-    if [ -f "$fn" ]; then
-        install_rcfile "$fn" "$rc_target_dir"
-    fi
-done
-
 cd bin || exit 1
 for fn in [!_]*[!~]; do
-    case "$fn" in
-        INSTALL) : ;;
-        README*) : ;;
-        *)
-            if [ ! -d "$fn" ]; then
-                install_file "$fn" "$bin_target_dir"
-            fi
-            ;;
-    esac
+    if [ -f "$fn" ]; then
+        install_file "$fn" "$bin_target_dir"
+    fi
 done
 
 
