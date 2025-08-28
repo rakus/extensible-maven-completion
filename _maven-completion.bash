@@ -107,7 +107,7 @@ _mvn_function_exists __ltrim_colon_completions ||
             local colon_word=${1%"${1##*:}"}
             local i=${#COMPREPLY[*]}
             while [[ $((--i)) -ge 0 ]]; do
-                COMPREPLY[$i]=${COMPREPLY[$i]#"$colon_word"}
+                COMPREPLY[i]=${COMPREPLY[$i]#"$colon_word"}
             done
         fi
     }
